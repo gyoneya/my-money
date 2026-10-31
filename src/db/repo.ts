@@ -300,6 +300,11 @@ export async function listAllCategories(db: MyMoneyDB = defaultDb): Promise<Cate
   return db.categories.toArray()
 }
 
+/** Todos os lançamentos não excluídos (base dos cálculos da Análise). */
+export async function listAllTransactions(db: MyMoneyDB = defaultDb): Promise<Transaction[]> {
+  return (await db.transactions.toArray()).filter((t) => !t.deleted_at)
+}
+
 /** Lançamentos não excluídos com data dentro do mês `AAAA-MM`, ordenados por data. */
 export async function listTransactionsOfMonth(month: string, db: MyMoneyDB = defaultDb): Promise<Transaction[]> {
   const rows = await db.transactions

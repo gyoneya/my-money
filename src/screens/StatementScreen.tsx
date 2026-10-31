@@ -5,25 +5,36 @@ import { SyncBadge } from '../components/SyncBadge'
 import { onDataChange } from '../db/events'
 import { listAllCategories, listTransactionsOfMonth } from '../db/repo'
 import type { Category, Transaction } from '../db/types'
-import { addMonthsISO, formatDayHeader, formatMonthLabel, monthKey, relativeDayLabel, todayISO } from '../lib/dates'
+import { MonthBar } from '../components/MonthBar'
+import { formatDayHeader, monthKey, relativeDayLabel, todayISO } from '../lib/dates'
 import { formatBRL } from '../lib/money'
 import { groupByDay, signedCents, summarizeMonth } from '../lib/statement'
 
-const shiftMonth = (month: string, delta: number) => monthKey(addMonthsISO(`${month}-01`, delta))
+export interface StatementFilter {
+  categoryId: string
+  month: string
+}
 
-export function StatementScreen() {
+export function StatementScreen({
+  filter,
+  onClearFilter,
+}: {
+  filter?: StatementFilter | null
+  onClearFilter?: () => void
+}) {
   const today = todayISO()
-  const [month, setMonth] = useState(monthKey(today))
+  const [month, setMonth] = useState(filter?.month ?? monthKey(today))
   const [rows, setRows] = useState<Transaction[]>([])
   const [categories, setCategories] = useState<Map<string, Category>>(new Map())
   const [editing, setEditing] = useState<Transaction | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const categoryId = filter?.categoryId ?? null
 
   const load = useCallback(async () => {
     const [txs, cats] = await Promise.all([listTransactionsOfMonth(month), listAllCategories()])
-    setRows(txs)
+    setRows(categoryId ? txs.filter((t) => t.category_id === categoryId) : txs)
     setCategories(new Map(cats.map((c) => [c.id, c])))
-  }, [month])
+  }, [month, categoryId])
 
   useEffect(() => {
     void load()
@@ -38,14 +49,14 @@ export function StatementScreen() {
 
   const summary = summarizeMonth(rows)
   const days = groupByDay(rows)
-  const isCurrent = month === monthKey(today)
+  const filterCategory = categoryId ? categories.get(categoryId) : undefined
 
   return (
     <div className="mx-auto flex h-full w-full max-w-md flex-col">
       {/* Resumo (só leitura, pode ficar em cima) */}
       <header className="border-b border-line px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3">
         <div className="flex items-baseline justify-between">
-          <p className="text-xs text-muted">Saldo do mês</p>
+          <p className="text-xs text-muted">{filterCategory ? `Saldo do mês · ${filterCategory.name}` : 'Saldo do mês'}</p>
           <SyncBadge />
         </div>
         <p className={`text-2xl font-semibold tabular-nums ${summary.balance < 0 ? 'text-negative' : 'text-positive'}`}>
@@ -87,32 +98,24 @@ export function StatementScreen() {
         )}
       </div>
 
+      {/* Filtro vindo da Análise (toque em uma categoria) */}
+      {filterCategory && (
+        <div className="flex items-center gap-2 border-t border-line px-3 py-2">
+          <span className="text-xs text-muted">Só</span>
+          <button
+            type="button"
+            onClick={onClearFilter}
+            className="flex min-w-0 items-center gap-1.5 rounded-lg bg-brand-soft px-3 py-1.5 text-sm text-brand"
+          >
+            <span aria-hidden>{filterCategory.icon ?? '•'}</span>
+            <span className="truncate">{filterCategory.name}</span>
+            <Icon name="close" className="h-3.5 w-3.5 shrink-0" />
+          </button>
+        </div>
+      )}
+
       {/* Seletor de mês embaixo (alcance do polegar) */}
-      <div className="flex items-center gap-2 border-t border-line px-3 py-2">
-        <button
-          type="button"
-          onClick={() => setMonth((m) => shiftMonth(m, -1))}
-          aria-label="Mês anterior"
-          className="rounded-xl p-3 text-muted active:bg-surface"
-        >
-          <Icon name="chevronLeft" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setMonth(monthKey(today))}
-          className={`flex-1 rounded-xl py-2 text-center text-sm font-semibold first-letter:uppercase ${isCurrent ? 'text-text' : 'text-brand'}`}
-        >
-          {formatMonthLabel(month)}
-        </button>
-        <button
-          type="button"
-          onClick={() => setMonth((m) => shiftMonth(m, 1))}
-          aria-label="Próximo mês"
-          className="rounded-xl p-3 text-muted active:bg-surface"
-        >
-          <Icon name="chevronRight" />
-        </button>
-      </div>
+      <MonthBar month={month} onChange={setMonth} />
 
       {editing && <EditTransactionSheet tx={editing} onClose={() => setEditing(null)} />}
     </div>

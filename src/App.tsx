@@ -1,11 +1,14 @@
 import type { Session } from '@supabase/supabase-js'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { bootstrap } from './bootstrap'
 import { supabase } from './lib/supabase'
 import { LaunchScreen } from './screens/LaunchScreen'
 import { ConfigScreen } from './screens/ConfigScreen'
 import { LoginScreen } from './screens/LoginScreen'
-import { StatementScreen } from './screens/StatementScreen'
+import { StatementScreen, type StatementFilter } from './screens/StatementScreen'
+
+// Análise (e os gráficos) só carrega quando a aba é aberta: a tela Lançar continua leve.
+const AnalysisScreen = lazy(() => import('./screens/AnalysisScreen').then((m) => ({ default: m.AnalysisScreen })))
 import { startSync } from './sync/manager'
 import { DEFAULT_TAB, TABS, type TabId } from './tabs'
 import { TabIcon } from './TabIcon'
@@ -42,8 +45,8 @@ export default function App() {
 
 function MainApp() {
   const [tab, setTab] = useState<TabId>(DEFAULT_TAB)
+  const [statementFilter, setStatementFilter] = useState<StatementFilter | null>(null)
   useEffect(() => startSync(), [])
-  const current = TABS.find((t) => t.id === tab)!
 
   return (
     <div className="flex h-full flex-col">
@@ -51,13 +54,22 @@ function MainApp() {
         {tab === 'lancar' ? (
           <LaunchScreen />
         ) : tab === 'extrato' ? (
-          <StatementScreen />
-        ) : tab === 'config' ? (
-          <ConfigScreen />
+          <StatementScreen
+            key={statementFilter ? `${statementFilter.categoryId}:${statementFilter.month}` : 'all'}
+            filter={statementFilter}
+            onClearFilter={() => setStatementFilter(null)}
+          />
+        ) : tab === 'analise' ? (
+          <Suspense fallback={null}>
+            <AnalysisScreen
+              onOpenCategory={(categoryId, month) => {
+                setStatementFilter({ categoryId, month })
+                setTab('extrato')
+              }}
+            />
+          </Suspense>
         ) : (
-          <div className="flex h-full items-center justify-center p-4">
-            <p className="text-muted">{current.label} — em construção</p>
-          </div>
+          <ConfigScreen />
         )}
       </main>
       <nav
@@ -69,7 +81,10 @@ function MainApp() {
         {TABS.map((t) => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              setStatementFilter(null)
+              setTab(t.id)
+            }}
             className={`flex flex-col items-center gap-0.5 pt-2 pb-1 text-xs ${
               t.id === tab ? 'text-brand' : 'text-muted'
             }`}

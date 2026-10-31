@@ -118,7 +118,7 @@ describe('lançamentos', () => {
   it('rejeita parcelamento inválido', () => {
     const t = { ...base, occurred_on: '2026-10-31' }
     expect(() => buildInstallmentTransactions({ ...t, kind: 'income' }, 2)).toThrow()
-    expect(() => buildInstallmentTransactions(t, 25)).toThrow()
+    expect(() => buildInstallmentTransactions(t, 61)).toThrow()
     expect(() => buildInstallmentTransactions({ ...t, amount_cents: 3 }, 4)).toThrow()
   })
 

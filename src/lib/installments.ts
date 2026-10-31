@@ -1,7 +1,7 @@
 import { addMonthsISO } from './dates'
 
 export const MIN_INSTALLMENTS = 2
-export const MAX_INSTALLMENTS = 24
+export const MAX_INSTALLMENTS = 60
 
 /**
  * Divide o total em N parcelas (centavos). A diferença de arredondamento vai para a 1ª.

@@ -18,7 +18,8 @@ export function Toast({ toast, onClose }: { toast: ToastData | null; onClose: ()
   if (!toast) return null
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-[max(env(safe-area-inset-top),0.75rem)]">
+    // Posicionado pelo pai (container `relative`), para ficar perto do polegar.
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center">
       <div
         role="status"
         className="toast-in pointer-events-auto flex max-w-md flex-1 items-center gap-3 rounded-2xl border border-line bg-surface-2 py-2.5 pr-2 pl-4 shadow-lg"

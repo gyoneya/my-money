@@ -167,11 +167,14 @@ export function LaunchScreen() {
         </Chip>
       </div>
 
-      {/* Categorias: alinhadas embaixo, ao alcance do polegar */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <div className="mt-auto">
-          <CategoryGrid categories={categories} onPick={save} onAdd={() => setSheet('category')} />
+      {/* Categorias: alinhadas embaixo, ao alcance do polegar. Aviso logo acima delas. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="mt-auto">
+            <CategoryGrid categories={categories} onPick={save} onAdd={() => setSheet('category')} />
+          </div>
         </div>
+        <Toast toast={toast} onClose={closeToast} />
       </div>
 
       <Keypad onKey={key} />
@@ -211,8 +214,6 @@ export function LaunchScreen() {
       {sheet === 'category' && (
         <NewCategorySheet kind={kind} hasAmount={cents > 0} onCreate={createAndSave} onClose={closeSheet} />
       )}
-
-      <Toast toast={toast} onClose={closeToast} />
     </div>
   )
 }

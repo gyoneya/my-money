@@ -64,7 +64,7 @@ Fluxo:
 
 Regras:
 - **Data**: default hoje (fuso America/Sao_Paulo). Toque → Ontem / Anteontem / calendário.
-- **Parcelas** (só despesa): toque em `1x` → seletor rápido 2–24x; mostra `10x de R$ 120,00`.
+- **Parcelas** (só despesa): toque em `1x` → seletor rápido À vista–12x + campo "Outro" (13–60x); mostra `10x de R$ 120,00`.
 - **Nota**: opcional, antes de tocar na categoria.
 - **"+" na grade**: modal mínimo (nome + ícone opcional) → cria categoria do tipo atual e já seleciona/salva o lançamento se houver valor digitado.
 - Teclado próprio porque o iOS não abre o teclado do sistema automaticamente; fallback de acessibilidade: `<input inputmode="decimal">`.
@@ -178,6 +178,8 @@ create index on transactions (user_id, occurred_on);
   - **Amarelo pastel**: avisos, pontos que pedem atenção.
 - Superfícies (cartões, teclado) em cinza quase preto; nada de fundo azulado.
 - **Alcance do polegar** (estilo Samsung One UI): controles mais usados ficam na parte de baixo da tela. Na tela Lançar, a grade de categorias fica alinhada embaixo, logo acima do teclado; data/parcelas/nota ficam no alto, junto do valor.
+  - Em listas e painéis, a opção mais usada fica **embaixo à direita** (ex.: "À vista", "Hoje"); opções raras ficam em cima.
+  - Avisos (toast com Desfazer) aparecem no meio da tela, não no topo.
 
 ## Requisitos não funcionais
 - Formatação pt-BR: `R$ 1.234,56`, datas `dd/mm/aaaa`.

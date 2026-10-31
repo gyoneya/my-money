@@ -12,10 +12,20 @@ export function DateSheet({
   onPick: (iso: string) => void
   onClose: () => void
 }) {
-  const quick = [0, -1, -2].map((d) => addDaysISO(today, d))
+  // Alcance do polegar: "Hoje" embaixo à direita; calendário (menos usado) em cima.
+  const quick = [-2, -1, 0].map((d) => addDaysISO(today, d))
 
   return (
     <Sheet title="Data" onClose={onClose}>
+      <label className="mb-2 flex items-center justify-between gap-3 rounded-xl bg-surface-2 px-4 py-3">
+        <span className="text-sm text-muted">Outra data</span>
+        <input
+          type="date"
+          value={value}
+          onChange={(e) => e.target.value && onPick(e.target.value)}
+          className="bg-transparent text-right text-sm text-text [color-scheme:dark]"
+        />
+      </label>
       <div className="grid grid-cols-3 gap-2">
         {quick.map((iso) => (
           <button
@@ -31,15 +41,6 @@ export function DateSheet({
           </button>
         ))}
       </div>
-      <label className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-surface-2 px-4 py-3">
-        <span className="text-sm text-muted">Outra data</span>
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => e.target.value && onPick(e.target.value)}
-          className="bg-transparent text-right text-sm text-text [color-scheme:dark]"
-        />
-      </label>
     </Sheet>
   )
 }

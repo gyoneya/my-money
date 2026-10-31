@@ -3,10 +3,17 @@ import { todayISO } from '../lib/dates'
 import { installmentDates, MAX_INSTALLMENTS, MIN_INSTALLMENTS, splitAmount } from '../lib/installments'
 import { MAX_CENTS } from '../lib/money'
 import { db as defaultDb, type MyMoneyDB } from './db'
+import { emitDataChange } from './events'
 import { SEED_CATEGORIES } from './seed'
 import type { Category, Kind, Status, Transaction } from './types'
 
 const now = () => new Date().toISOString()
+
+/** Avisa telas e sync que houve escrita local. Repassa o valor para uso em `.then`. */
+function changed<T>(value?: T): T {
+  emitDataChange('local')
+  return value as T
+}
 export const newId = () => crypto.randomUUID()
 
 /** Lançamento com data futura nasce previsto; até hoje, realizado. */
@@ -51,7 +58,7 @@ export async function createCategory(
     }
     await db.categories.add(category)
     return category
-  })
+  }).then(changed)
 }
 
 export async function updateCategory(
@@ -61,6 +68,7 @@ export async function updateCategory(
 ): Promise<void> {
   if (patch.name !== undefined && !patch.name.trim()) throw new Error('Nome obrigatório')
   await db.categories.update(id, { ...patch, updated_at: now(), pending: 1 })
+  changed()
 }
 
 /** Cria as categorias iniciais se ainda não houver nenhuma. Retorna true se criou. */
@@ -83,7 +91,7 @@ export async function seedCategoriesIfEmpty(db: MyMoneyDB = defaultDb): Promise<
     )
     await db.categories.bulkAdd(rows)
     return true
-  })
+  }).then((created) => (created ? changed(created) : created))
 }
 
 // ---------------------------------------------------------------------------
@@ -158,11 +166,12 @@ export async function promotePlanned(today: string = todayISO(), db: MyMoneyDB =
     const ts = now()
     for (const t of due) await db.transactions.update(t.id, { status: 'done', updated_at: ts, pending: 1 })
     return due.length
-  })
+  }).then((n) => (n ? changed(n) : n))
 }
 
 export async function addTransactions(rows: Transaction[], db: MyMoneyDB = defaultDb): Promise<void> {
   await db.transactions.bulkAdd(rows)
+  changed()
 }
 
 /** Soft delete (necessário para o sync propagar a exclusão). Usado também pelo "Desfazer". */
@@ -171,6 +180,7 @@ export async function softDeleteTransactions(ids: string[], db: MyMoneyDB = defa
   await db.transaction('rw', db.transactions, async () => {
     for (const id of ids) await db.transactions.update(id, { deleted_at: ts, updated_at: ts, pending: 1 })
   })
+  changed()
 }
 
 /** Lançamentos não excluídos com data dentro do mês `AAAA-MM`, ordenados por data. */

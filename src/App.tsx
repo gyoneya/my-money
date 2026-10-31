@@ -4,6 +4,7 @@ import { bootstrap } from './bootstrap'
 import { supabase } from './lib/supabase'
 import { LaunchScreen } from './screens/LaunchScreen'
 import { LoginScreen } from './screens/LoginScreen'
+import { startSync } from './sync/manager'
 import { DEFAULT_TAB, TABS, type TabId } from './tabs'
 import { TabIcon } from './TabIcon'
 
@@ -39,6 +40,7 @@ export default function App() {
 
 function MainApp() {
   const [tab, setTab] = useState<TabId>(DEFAULT_TAB)
+  useEffect(() => startSync(), [])
   const current = TABS.find((t) => t.id === tab)!
 
   return (

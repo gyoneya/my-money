@@ -14,6 +14,7 @@ import {
   listCategories,
   softDeleteTransactions,
 } from '../db/repo'
+import { onDataChange } from '../db/events'
 import type { Category, Kind } from '../db/types'
 import { relativeDayLabel, todayISO } from '../lib/dates'
 import { splitAmount } from '../lib/installments'
@@ -43,6 +44,8 @@ export function LaunchScreen() {
 
   useEffect(() => {
     void reloadCategories(kind)
+    // Categorias criadas/editadas em outro aparelho chegam pelo sync.
+    return onDataChange((source) => source === 'remote' && void reloadCategories(kind))
   }, [kind, reloadCategories])
 
   const key = useCallback((k: string) => setCents((c) => pressKey(c, k)), [])

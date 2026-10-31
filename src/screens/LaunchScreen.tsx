@@ -3,7 +3,6 @@ import { CategoryGrid } from '../components/CategoryGrid'
 import { DateSheet } from '../components/DateSheet'
 import { Icon, type IconName } from '../components/Icon'
 import { Keypad } from '../components/Keypad'
-import { NoteSheet } from '../components/NoteSheet'
 import { Toast, type ToastData } from '../components/Toast'
 import { InstallmentsSheet } from '../components/InstallmentsSheet'
 import {
@@ -20,7 +19,7 @@ import { formatBRL, parseBRL, pressKey } from '../lib/money'
 
 const KIND_LABEL: Record<Kind, string> = { expense: 'Despesa', income: 'Receita' }
 
-type SheetId = 'date' | 'note' | 'installments'
+type SheetId = 'date' | 'installments'
 
 export function LaunchScreen() {
   const [kind, setKind] = useState<Kind>('expense')
@@ -157,9 +156,6 @@ export function LaunchScreen() {
             {installments}x
           </Chip>
         )}
-        <Chip icon="note" active={note !== ''} onClick={() => setSheet('note')}>
-          {note || 'Nota'}
-        </Chip>
       </div>
 
       {/* Categorias: alinhadas embaixo, ao alcance do polegar. Aviso logo acima delas. */}
@@ -173,7 +169,31 @@ export function LaunchScreen() {
       </div>
 
       {/* Teclado em painel próprio, visualmente separado das categorias */}
-      <div className="-mx-3 -mb-3 rounded-t-2xl bg-surface-2 px-3 pt-3 pb-3">
+      <div className="-mx-3 -mb-3 flex flex-col gap-1.5 rounded-t-2xl bg-surface-2 px-3 pt-3 pb-3">
+        {/* Nota sempre à vista (opcional): tocar abre o teclado do sistema */}
+        <div className="relative">
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+            maxLength={200}
+            placeholder="Nota (o que foi?)"
+            aria-label="Nota"
+            enterKeyHint="done"
+            autoCapitalize="sentences"
+            className="h-12 w-full rounded-xl bg-key px-4 pr-11 text-base text-text outline-none placeholder:text-muted focus:ring-1 focus:ring-brand"
+          />
+          {note && (
+            <button
+              type="button"
+              onClick={() => setNote('')}
+              aria-label="Limpar nota"
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted"
+            >
+              <Icon name="close" className="h-4 w-4" />
+            </button>
+          )}
+        </div>
         <Keypad onKey={key} />
       </div>
 
@@ -183,16 +203,6 @@ export function LaunchScreen() {
           today={today}
           onPick={(iso) => {
             setDate(iso === today ? null : iso)
-            setSheet(null)
-          }}
-          onClose={closeSheet}
-        />
-      )}
-      {sheet === 'note' && (
-        <NoteSheet
-          value={note}
-          onSave={(n) => {
-            setNote(n)
             setSheet(null)
           }}
           onClose={closeSheet}

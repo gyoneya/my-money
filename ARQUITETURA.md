@@ -54,7 +54,8 @@ Prioridade 1: lançamento rápido. Prioridade 2: análise dentro do app (sem BI 
 [ 4 ][ 5 ][ 6 ]                teclado numérico PRÓPRIO (não o do sistema)
 [ 7 ][ 8 ][ 9 ]
 [00 ][ 0 ][ ⌫ ]
-[ 📅 Hoje ] [ 1x ] [ ✎ Nota ]  opcionais, discretos
+[ 📅 Hoje ] [ 1x ]           opcionais, discretos (junto do valor)
+[ Nota (o que foi?)      ]    campo sempre visível acima do teclado (opcional)
 ```
 Fluxo:
 1. Digita valor (entrada estilo banco: `1 2 3 4` → `R$ 12,34`). Em compra parcelada, o valor digitado é o **total**.
@@ -65,7 +66,7 @@ Fluxo:
 Regras:
 - **Data**: default hoje (fuso America/Sao_Paulo). Toque → Ontem / Anteontem / calendário.
 - **Parcelas** (só despesa): toque em `1x` → seletor rápido À vista–12x + campo "Outro" (13–60x); mostra `10x de R$ 120,00`.
-- **Nota**: opcional, antes de tocar na categoria.
+- **Nota**: opcional, campo fixo acima do teclado (tocar abre o teclado do sistema); preencher antes de tocar na categoria.
 - Sem "+" na grade: categorias são criadas na Config (decisão do usuário, para a grade ficar só com o uso diário).
 - Teclado próprio porque o iOS não abre o teclado do sistema automaticamente; fallback de acessibilidade: `<input inputmode="decimal">`.
 - Categoria tocada sem valor = não salva (shake no display).

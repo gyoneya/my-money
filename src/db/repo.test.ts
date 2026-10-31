@@ -7,9 +7,13 @@ import {
   buildTransaction,
   promotePlanned,
   countPending,
+  clearLocalData,
   createCategory,
   ensureLocalOwner,
+  listArchivedCategories,
   listCategories,
+  moveCategory,
+  restoreCategory,
   listInstallmentGroup,
   listTransactionsOfMonth,
   updateInstallmentGroup,
@@ -62,6 +66,50 @@ describe('categorias', () => {
     await updateCategory(c.id, { archived: true }, db)
     expect(await listCategories('income', db)).toHaveLength(0)
     expect((await db.categories.get(c.id))!.pending).toBe(1)
+  })
+})
+
+describe('ordem e arquivo de categorias', () => {
+  const names = async () => (await listCategories('income', db)).map((c) => c.name)
+
+  it('move para cima/baixo e ignora limites', async () => {
+    await seedCategoriesIfEmpty(db)
+    expect(await names()).toEqual(['Salário', 'Extra', 'Vendas', 'Rendimentos', 'Outros'])
+    const [salario, extra] = await listCategories('income', db)
+
+    await moveCategory(extra.id, -1, db)
+    expect(await names()).toEqual(['Extra', 'Salário', 'Vendas', 'Rendimentos', 'Outros'])
+    await moveCategory(extra.id, -1, db) // já é o primeiro
+    expect((await names())[0]).toBe('Extra')
+    await moveCategory(salario.id, 1, db)
+    expect(await names()).toEqual(['Extra', 'Vendas', 'Salário', 'Rendimentos', 'Outros'])
+  })
+
+  it('só marca para sync quem mudou de posição', async () => {
+    await seedCategoriesIfEmpty(db)
+    await db.categories.toCollection().modify({ pending: 0 })
+    const list = await listCategories('income', db)
+    await moveCategory(list[1].id, -1, db)
+    const pending = (await db.categories.where('pending').equals(1).toArray()).map((c) => c.name).sort()
+    expect(pending).toEqual(['Extra', 'Salário'])
+  })
+
+  it('arquivar e restaurar (volta no fim)', async () => {
+    await seedCategoriesIfEmpty(db)
+    const [salario] = await listCategories('income', db)
+    await updateCategory(salario.id, { archived: true }, db)
+    expect(await names()).not.toContain('Salário')
+    expect((await listArchivedCategories('income', db)).map((c) => c.name)).toEqual(['Salário'])
+
+    await restoreCategory(salario.id, db)
+    expect((await names()).at(-1)).toBe('Salário')
+    expect(await listArchivedCategories('income', db)).toHaveLength(0)
+  })
+
+  it('limpa dados locais', async () => {
+    await seedCategoriesIfEmpty(db)
+    await clearLocalData(db)
+    expect(await db.categories.count()).toBe(0)
   })
 })
 

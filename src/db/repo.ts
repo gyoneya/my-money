@@ -71,6 +71,52 @@ export async function updateCategory(
   changed()
 }
 
+/** Categorias arquivadas do tipo (para restaurar na Config). */
+export async function listArchivedCategories(kind: Kind, db: MyMoneyDB = defaultDb): Promise<Category[]> {
+  const all = await db.categories.where('kind').equals(kind).toArray()
+  return all.filter((c) => c.archived).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+}
+
+/**
+ * Troca a categoria de lugar com a vizinha (delta −1 = antes, +1 = depois na ordem).
+ * Renumera a ordem do tipo inteiro; só marca para sync quem mudou de número.
+ */
+export async function moveCategory(id: string, delta: -1 | 1, db: MyMoneyDB = defaultDb): Promise<void> {
+  await db.transaction('rw', db.categories, async () => {
+    const target = await db.categories.get(id)
+    if (!target) return
+    const list = await listCategories(target.kind, db)
+    const from = list.findIndex((c) => c.id === id)
+    const to = from + delta
+    if (from < 0 || to < 0 || to >= list.length) return
+    ;[list[from], list[to]] = [list[to], list[from]]
+    const ts = now()
+    for (const [i, c] of list.entries()) {
+      if (c.sort_order !== i) await db.categories.update(c.id, { sort_order: i, updated_at: ts, pending: 1 })
+    }
+  })
+  changed()
+}
+
+/** Restaura uma categoria arquivada no fim da ordem. */
+export async function restoreCategory(id: string, db: MyMoneyDB = defaultDb): Promise<void> {
+  await db.transaction('rw', db.categories, async () => {
+    const c = await db.categories.get(id)
+    if (!c) return
+    const active = await listCategories(c.kind, db)
+    const last = active.reduce((max, x) => Math.max(max, x.sort_order), -1)
+    await db.categories.update(id, { archived: false, sort_order: last + 1, updated_at: now(), pending: 1 })
+  })
+  changed()
+}
+
+/** Apaga todos os dados locais (ao sair da conta). */
+export async function clearLocalData(db: MyMoneyDB = defaultDb): Promise<void> {
+  await db.transaction('rw', [db.categories, db.recurring_rules, db.transactions, db.meta], async () => {
+    await Promise.all([db.categories.clear(), db.recurring_rules.clear(), db.transactions.clear(), db.meta.clear()])
+  })
+}
+
 /** Cria as categorias iniciais se ainda não houver nenhuma. Retorna true se criou. */
 export async function seedCategoriesIfEmpty(db: MyMoneyDB = defaultDb): Promise<boolean> {
   return db.transaction('rw', db.categories, async () => {

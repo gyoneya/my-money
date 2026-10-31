@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { bootstrap } from './bootstrap'
 import { supabase } from './lib/supabase'
 import { LaunchScreen } from './screens/LaunchScreen'
+import { ConfigScreen } from './screens/ConfigScreen'
 import { LoginScreen } from './screens/LoginScreen'
 import { StatementScreen } from './screens/StatementScreen'
 import { startSync } from './sync/manager'
@@ -51,6 +52,8 @@ function MainApp() {
           <LaunchScreen />
         ) : tab === 'extrato' ? (
           <StatementScreen />
+        ) : tab === 'config' ? (
+          <ConfigScreen />
         ) : (
           <div className="flex h-full items-center justify-center p-4">
             <p className="text-muted">{current.label} — em construção</p>

@@ -10,14 +10,17 @@ const TILE = 'flex h-[4.25rem] flex-col items-center justify-center gap-1 rounde
  */
 export function CategoryGrid({
   categories,
+  selectedId,
   onPick,
   onAdd,
 }: {
   categories: Category[]
+  selectedId?: string
   onPick: (category: Category) => void
-  onAdd: () => void
+  onAdd?: () => void
 }) {
-  const items: (Category | 'add')[] = [...categories, 'add']
+  const items: (Category | 'add')[] = onAdd ? [...categories, 'add'] : [...categories]
+  if (!items.length) return null
   const rows: (Category | 'add' | null)[][] = []
   for (let i = 0; i < items.length; i += COLS) rows.push(items.slice(i, i + COLS))
   // Completa a linha do topo com vazios para as de baixo ficarem cheias.
@@ -40,7 +43,13 @@ export function CategoryGrid({
             <Icon name="plus" className="h-6 w-6" />
           </button>
         ) : (
-          <button key={item.id} type="button" onClick={() => onPick(item)} className={`${TILE} bg-surface active:bg-surface-2`}>
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onPick(item)}
+            aria-pressed={selectedId ? item.id === selectedId : undefined}
+            className={`${TILE} ${item.id === selectedId ? 'bg-brand-soft ring-1 ring-brand' : 'bg-surface active:bg-surface-2'}`}
+          >
             <span className="text-2xl leading-none" aria-hidden>
               {item.icon ?? '•'}
             </span>

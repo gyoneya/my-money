@@ -10,7 +10,10 @@ import {
   createCategory,
   ensureLocalOwner,
   listCategories,
+  listInstallmentGroup,
   listTransactionsOfMonth,
+  updateInstallmentGroup,
+  updateTransaction,
   seedCategoriesIfEmpty,
   softDeleteTransactions,
   statusFor,
@@ -151,6 +154,44 @@ describe('lançamentos', () => {
     expect(second.status).toBe('done')
     expect(second.pending).toBe(1)
     expect((await db.transactions.get(rows[2].id))!.status).toBe('planned')
+  })
+
+  it('editar lançamento recalcula status pela data', async () => {
+    const t = buildTransaction({ ...base, occurred_on: '2026-10-31' }, '2026-10-31')
+    await addTransactions([t], db)
+    await db.transactions.update(t.id, { pending: 0 })
+    await updateTransaction(t.id, { amount_cents: 999, category_id: 'c2', occurred_on: '2026-11-05', note: ' x ' }, '2026-10-31', db)
+    const r = (await db.transactions.get(t.id))!
+    expect([r.amount_cents, r.category_id, r.status, r.note, r.pending]).toEqual([999, 'c2', 'planned', 'x', 1])
+  })
+
+  it('editar todas as parcelas: novo total redistribuído e datas deslocadas', async () => {
+    const rows = buildInstallmentTransactions({ ...base, amount_cents: 30000, occurred_on: '2026-10-31' }, 3, '2026-10-31')
+    await addTransactions(rows, db)
+    await updateInstallmentGroup(
+      rows[0].installment_group_id!,
+      { amount_cents: 10000, category_id: 'c2', occurred_on: '2026-09-30', note: 'tv' },
+      '2026-10-31',
+      db,
+    )
+    const group = await listInstallmentGroup(rows[0].installment_group_id!, db)
+    expect(group.map((t) => [t.amount_cents, t.occurred_on, t.status, t.category_id, t.note])).toEqual([
+      [3334, '2026-09-30', 'done', 'c2', 'tv'],
+      [3333, '2026-10-30', 'done', 'c2', 'tv'],
+      [3333, '2026-11-30', 'planned', 'c2', 'tv'],
+    ])
+  })
+
+  it('editar todas ignora parcela já excluída', async () => {
+    const rows = buildInstallmentTransactions({ ...base, amount_cents: 300, occurred_on: '2026-10-31' }, 3, '2026-10-31')
+    await addTransactions(rows, db)
+    await softDeleteTransactions([rows[1].id], db)
+    await updateInstallmentGroup(rows[0].installment_group_id!, { amount_cents: 200, category_id: 'cat', occurred_on: '2026-10-31', note: null }, '2026-10-31', db)
+    const group = await listInstallmentGroup(rows[0].installment_group_id!, db)
+    expect(group.map((t) => [t.installment_number, t.amount_cents, t.occurred_on])).toEqual([
+      [1, 100, '2026-10-31'],
+      [3, 100, '2026-12-31'],
+    ])
   })
 
   it('conta pendentes de sync', async () => {

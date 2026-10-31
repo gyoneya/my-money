@@ -1,5 +1,5 @@
 // Toda escrita vai primeiro ao IndexedDB com pending = 1; o sync envia depois.
-import { todayISO } from '../lib/dates'
+import { addMonthsISO, todayISO } from '../lib/dates'
 import { installmentDates, MAX_INSTALLMENTS, MIN_INSTALLMENTS, splitAmount } from '../lib/installments'
 import { MAX_CENTS } from '../lib/money'
 import { db as defaultDb, type MyMoneyDB } from './db'
@@ -181,6 +181,77 @@ export async function softDeleteTransactions(ids: string[], db: MyMoneyDB = defa
     for (const id of ids) await db.transactions.update(id, { deleted_at: ts, updated_at: ts, pending: 1 })
   })
   changed()
+}
+
+export interface TransactionEdit {
+  amount_cents: number
+  category_id: string
+  occurred_on: string
+  note: string | null
+}
+
+/** Edita um lançamento (ou só esta parcela). Status acompanha a nova data. */
+export async function updateTransaction(
+  id: string,
+  edit: TransactionEdit,
+  today: string = todayISO(),
+  db: MyMoneyDB = defaultDb,
+): Promise<void> {
+  assertAmount(edit.amount_cents)
+  await db.transactions.update(id, {
+    amount_cents: edit.amount_cents,
+    category_id: edit.category_id,
+    occurred_on: edit.occurred_on,
+    note: edit.note?.trim() || null,
+    status: statusFor(edit.occurred_on, today),
+    updated_at: now(),
+    pending: 1,
+  })
+  changed()
+}
+
+/** Parcelas ativas da compra, em ordem. */
+export async function listInstallmentGroup(groupId: string, db: MyMoneyDB = defaultDb): Promise<Transaction[]> {
+  const rows = await db.transactions.where('installment_group_id').equals(groupId).toArray()
+  return rows.filter((t) => !t.deleted_at).sort((a, b) => a.installment_number! - b.installment_number!)
+}
+
+/**
+ * Edita todas as parcelas: categoria e nota em todas; `amount_cents` é o novo TOTAL,
+ * redistribuído entre as parcelas ativas; `occurred_on` é a nova data da compra
+ * (1ª parcela) e todas as datas se deslocam a partir dela.
+ */
+export async function updateInstallmentGroup(
+  groupId: string,
+  edit: TransactionEdit,
+  today: string = todayISO(),
+  db: MyMoneyDB = defaultDb,
+): Promise<void> {
+  assertAmount(edit.amount_cents)
+  await db.transaction('rw', db.transactions, async () => {
+    const rows = await listInstallmentGroup(groupId, db)
+    const amounts = splitAmount(edit.amount_cents, rows.length)
+    if (!amounts) throw new Error('Valor menor que o número de parcelas')
+    const ts = now()
+    for (const [i, t] of rows.entries()) {
+      const date = addMonthsISO(edit.occurred_on, t.installment_number! - 1)
+      await db.transactions.update(t.id, {
+        amount_cents: amounts[i],
+        category_id: edit.category_id,
+        occurred_on: date,
+        note: edit.note?.trim() || null,
+        status: statusFor(date, today),
+        updated_at: ts,
+        pending: 1,
+      })
+    }
+  })
+  changed()
+}
+
+/** Todas as categorias (inclusive arquivadas), para mostrar nomes no extrato. */
+export async function listAllCategories(db: MyMoneyDB = defaultDb): Promise<Category[]> {
+  return db.categories.toArray()
 }
 
 /** Lançamentos não excluídos com data dentro do mês `AAAA-MM`, ordenados por data. */

@@ -4,6 +4,7 @@ import { bootstrap } from './bootstrap'
 import { supabase } from './lib/supabase'
 import { LaunchScreen } from './screens/LaunchScreen'
 import { LoginScreen } from './screens/LoginScreen'
+import { StatementScreen } from './screens/StatementScreen'
 import { startSync } from './sync/manager'
 import { DEFAULT_TAB, TABS, type TabId } from './tabs'
 import { TabIcon } from './TabIcon'
@@ -48,6 +49,8 @@ function MainApp() {
       <main className="min-h-0 flex-1 overflow-y-auto">
         {tab === 'lancar' ? (
           <LaunchScreen />
+        ) : tab === 'extrato' ? (
+          <StatementScreen />
         ) : (
           <div className="flex h-full items-center justify-center p-4">
             <p className="text-muted">{current.label} — em construção</p>

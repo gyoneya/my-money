@@ -62,13 +62,15 @@ function MainApp() {
       </main>
       <nav
         className="grid grid-cols-4 border-t border-line bg-bg"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        // iPhone: invade parte da área da barra de gestos (34px) para ganhar espaço,
+        // mantendo os rótulos acima do traço inferior.
+        style={{ paddingBottom: 'max(calc(env(safe-area-inset-bottom) - 20px), 4px)' }}
       >
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex flex-col items-center gap-0.5 py-2 text-xs ${
+            className={`flex flex-col items-center gap-0.5 pt-2 pb-1 text-xs ${
               t.id === tab ? 'text-brand' : 'text-muted'
             }`}
           >

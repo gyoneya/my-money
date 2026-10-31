@@ -122,10 +122,10 @@ export function StatementScreen() {
 function TransactionRow({ tx, category, onClick }: { tx: Transaction; category?: Category; onClick: () => void }) {
   const planned = tx.status === 'planned'
   const value = signedCents(tx)
-  const detail = [
-    tx.installment_total ? `${tx.installment_number}/${tx.installment_total}` : null,
-    tx.note,
-  ]
+  // A nota diz o que foi: é o destaque. Sem nota, o destaque é a categoria.
+  const categoryName = category?.name ?? 'Sem categoria'
+  const title = tx.note ?? categoryName
+  const detail = [tx.note ? categoryName : null, tx.installment_total ? `${tx.installment_number}/${tx.installment_total}` : null]
     .filter(Boolean)
     .join(' · ')
 
@@ -140,7 +140,7 @@ function TransactionRow({ tx, category, onClick }: { tx: Transaction; category?:
           {category?.icon ?? '•'}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm text-text">{category?.name ?? 'Sem categoria'}</span>
+          <span className="block truncate text-sm text-text">{title}</span>
           {detail && <span className="block truncate text-xs text-muted">{detail}</span>}
         </span>
         {planned && <Icon name="clock" className="h-4 w-4 shrink-0 text-muted" />}

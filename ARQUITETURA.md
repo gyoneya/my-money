@@ -192,6 +192,19 @@ create index on transactions (user_id, occurred_on);
 - Saldo inicial: zero.
 - Análise 100% no app; sem BI externo.
 
+## Decisões de implementação (aprovadas)
+- Todas as tabelas têm `server_updated_at` (trigger, relógio do servidor): é o cursor do pull. `updated_at` do cliente decide conflitos.
+- Sem DELETE físico: categorias usam `archived`; demais tabelas, `deleted_at`.
+- `user_id` com `default auth.uid()`. Push envia categorias antes dos lançamentos.
+- Primeiro uso exige login online; seed das categorias só se o servidor não tiver nenhuma.
+- "3/10" é exibido a partir de `installment_number/total`; `note` guarda só o texto do usuário.
+- Editar "todas as parcelas": categoria/nota em todas; novo valor = novo total redistribuído; nova data desloca todas.
+- Saldo = receitas `done` − despesas `done`.
+- "Hoje" calculado em America/Sao_Paulo via `Intl`.
+- Valor máximo por lançamento: R$ 9.999.999,99.
+- Ícone de categoria = emoji. Ordenação na Config por botões ↑↓.
+- Tabela de recorrentes já existe na migration; telas na Fase 2. Promoção `planned → done` já na Fase 1.
+
 ## Instruções para o Claude Code
 - Implementar a Fase 1 nesta ordem: scaffold → migration SQL do Supabase → tela Lançar com Dexie local → parcelas → auth → sync → Extrato → Config de categorias → PWA manifest/service worker → deploy Vercel.
 - A tela Lançar é o produto. Polir antes de qualquer outra tela.

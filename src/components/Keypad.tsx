@@ -11,7 +11,7 @@ export function Keypad({ onKey }: { onKey: (key: string) => void }) {
           type="button"
           onClick={() => onKey(k)}
           aria-label={k === 'back' ? 'Apagar' : k}
-          className="flex h-14 items-center justify-center rounded-xl bg-surface text-2xl font-medium text-text active:bg-surface-2"
+          className="flex h-14 items-center justify-center rounded-xl bg-key text-2xl font-medium text-text active:bg-key-pressed"
         >
           {k === 'back' ? <Icon name="back" className="h-6 w-6" /> : k}
         </button>

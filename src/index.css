@@ -7,6 +7,8 @@
   --color-surface: #0e0f12; /* cartões, barras, teclado */
   --color-surface-2: #181a1f; /* elevado / pressionado */
   --color-line: #23262d; /* bordas e divisórias */
+  --color-key: #2a2e36; /* teclas do teclado numérico (sobre o painel surface-2) */
+  --color-key-pressed: #3a3f49;
   --color-text: #eef1f6;
   --color-muted: #8a909c;
 

@@ -178,6 +178,7 @@ create index on transactions (user_id, occurred_on);
   - **Vermelho pastel**: valores negativos / despesas.
   - **Amarelo pastel**: avisos, pontos que pedem atenção.
 - Superfícies (cartões, teclado) em cinza quase preto; nada de fundo azulado.
+- Teclado numérico em **painel próprio** (fundo mais claro que as categorias), para separar visualmente as duas áreas.
 - **Alcance do polegar** (estilo Samsung One UI): controles mais usados ficam na parte de baixo da tela. Na tela Lançar, a grade de categorias fica alinhada embaixo, logo acima do teclado; data/parcelas/nota ficam no alto, junto do valor.
   - Em listas e painéis, a opção mais usada fica **embaixo à direita** (ex.: "À vista", "Hoje"); opções raras ficam em cima.
   - Avisos (toast com Desfazer) aparecem no meio da tela, não no topo.

@@ -172,7 +172,10 @@ export function LaunchScreen() {
         <Toast toast={toast} onClose={closeToast} />
       </div>
 
-      <Keypad onKey={key} />
+      {/* Teclado em painel próprio, visualmente separado das categorias */}
+      <div className="-mx-3 -mb-3 rounded-t-2xl bg-surface-2 px-3 pt-3 pb-3">
+        <Keypad onKey={key} />
+      </div>
 
       {sheet === 'date' && (
         <DateSheet

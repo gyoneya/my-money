@@ -2,6 +2,10 @@
 
 PWA de finanças pessoais: lançar despesas/receitas em valor + 1 toque, offline-first, sincronizado com Supabase. Especificação: [ARQUITETURA.md](ARQUITETURA.md).
 
+- Produção: https://my-money-azure-sigma.vercel.app
+- Repositório: https://github.com/gyoneya/my-money (privado)
+- Supabase: projeto `gsmrhunybxdflvsvwugz`
+
 ## Stack
 React + TypeScript + Vite · Tailwind · Dexie (IndexedDB) · Supabase (Postgres + Auth + RLS) · vite-plugin-pwa · Vercel.
 

@@ -1,5 +1,26 @@
 @import 'tailwindcss';
 
+/* Identidade visual: fundo preto OLED, tema escuro fixo, cores pastel.
+   Use sempre estes tokens (bg-bg, text-brand, text-negative...), nunca cores soltas. */
+@theme {
+  --color-bg: #000000; /* fundo: preto puro (pixel apagado no OLED) */
+  --color-surface: #0e0f12; /* cartões, barras, teclado */
+  --color-surface-2: #181a1f; /* elevado / pressionado */
+  --color-line: #23262d; /* bordas e divisórias */
+  --color-text: #eef1f6;
+  --color-muted: #8a909c;
+
+  --color-brand: #9cc3ff; /* azul pastel: identidade, seleção, ações */
+  --color-brand-soft: #9cc3ff26;
+  --color-positive: #95e0b0; /* verde pastel: valores positivos, receitas */
+  --color-negative: #ff9b9b; /* vermelho pastel: valores negativos, despesas */
+  --color-warning: #ffe08f; /* amarelo pastel: avisos, atenção */
+}
+
+:root {
+  color-scheme: dark;
+}
+
 html,
 body,
 #root {
@@ -8,8 +29,8 @@ body,
 
 body {
   margin: 0;
-  background: #0f172a;
-  color: #f8fafc;
+  background: var(--color-bg);
+  color: var(--color-text);
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;

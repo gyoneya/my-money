@@ -1,10 +1,10 @@
 export type TabId = 'lancar' | 'extrato' | 'analise' | 'config'
 
-export const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'lancar', label: 'Lançar', icon: '➕' },
-  { id: 'extrato', label: 'Extrato', icon: '📄' },
-  { id: 'analise', label: 'Análise', icon: '📊' },
-  { id: 'config', label: 'Config', icon: '⚙️' },
+export const TABS: { id: TabId; label: string }[] = [
+  { id: 'lancar', label: 'Lançar' },
+  { id: 'extrato', label: 'Extrato' },
+  { id: 'analise', label: 'Análise' },
+  { id: 'config', label: 'Config' },
 ]
 
 // App abre sempre na tela de lançamento.

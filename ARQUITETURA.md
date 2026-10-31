@@ -169,6 +169,15 @@ create index on transactions (user_id, occurred_on);
 2. **Análise**: aba Análise completa (Posso gastar, resumo, por categoria, compromissos futuros, simulador, evolução), orçamento por categoria, recorrentes.
 3. **Refino**: layout desktop caprichado, exportar CSV, ajustes de UX a partir do uso real.
 
+## Identidade visual
+- **Tema escuro fixo**, fundo **preto puro** (`#000`, economiza bateria em OLED). Sem tema claro.
+- Paleta **pastel**, aplicada no app todo via tokens em `src/index.css`:
+  - **Azul pastel**: identidade (seleção, botões, destaques).
+  - **Verde pastel**: valores positivos / receitas.
+  - **Vermelho pastel**: valores negativos / despesas.
+  - **Amarelo pastel**: avisos, pontos que pedem atenção.
+- Superfícies (cartões, teclado) em cinza quase preto; nada de fundo azulado.
+
 ## Requisitos não funcionais
 - Formatação pt-BR: `R$ 1.234,56`, datas `dd/mm/aaaa`.
 - Abertura < 1 s (app shell em cache).

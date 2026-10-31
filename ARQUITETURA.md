@@ -177,6 +177,7 @@ create index on transactions (user_id, occurred_on);
   - **Vermelho pastel**: valores negativos / despesas.
   - **Amarelo pastel**: avisos, pontos que pedem atenção.
 - Superfícies (cartões, teclado) em cinza quase preto; nada de fundo azulado.
+- **Alcance do polegar** (estilo Samsung One UI): controles mais usados ficam na parte de baixo da tela. Na tela Lançar, a grade de categorias fica alinhada embaixo, logo acima do teclado; data/parcelas/nota ficam no alto, junto do valor.
 
 ## Requisitos não funcionais
 - Formatação pt-BR: `R$ 1.234,56`, datas `dd/mm/aaaa`.

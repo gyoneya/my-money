@@ -152,13 +152,8 @@ export function LaunchScreen() {
         </label>
       </div>
 
-      {/* Categorias */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <CategoryGrid categories={categories} onPick={save} onAdd={() => setSheet('category')} />
-      </div>
-
-      {/* Opcionais */}
-      <div className="flex gap-2">
+      {/* Opcionais, perto do valor */}
+      <div className="flex justify-center gap-1.5">
         <Chip icon="calendar" active={date !== null} onClick={() => setSheet('date')}>
           {relativeDayLabel(occurredOn, today)}
         </Chip>
@@ -167,9 +162,16 @@ export function LaunchScreen() {
             {installments}x
           </Chip>
         )}
-        <Chip icon="note" active={note !== ''} onClick={() => setSheet('note')} grow>
+        <Chip icon="note" active={note !== ''} onClick={() => setSheet('note')}>
           {note || 'Nota'}
         </Chip>
+      </div>
+
+      {/* Categorias: alinhadas embaixo, ao alcance do polegar */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <div className="mt-auto">
+          <CategoryGrid categories={categories} onPick={save} onAdd={() => setSheet('category')} />
+        </div>
       </div>
 
       <Keypad onKey={key} />
@@ -218,13 +220,11 @@ export function LaunchScreen() {
 function Chip({
   icon,
   active,
-  grow,
   onClick,
   children,
 }: {
   icon: IconName
   active: boolean
-  grow?: boolean
   onClick: () => void
   children: ReactNode
 }) {
@@ -232,7 +232,7 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-w-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm ${grow ? 'flex-1' : ''} ${
+      className={`flex max-w-[45%] min-w-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm ${
         active ? 'bg-brand-soft text-brand' : 'text-muted active:bg-surface'
       }`}
     >

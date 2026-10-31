@@ -106,6 +106,14 @@ create trigger transactions_server_updated_at
   for each row execute function public.set_server_updated_at();
 
 -- ---------------------------------------------------------------------------
+-- Acesso pela API: só usuários logados (nada para `anon`). Explícito para não
+-- depender da opção "Automatically expose new tables" do Supabase.
+-- ---------------------------------------------------------------------------
+
+grant usage on schema public to authenticated;
+grant select, insert, update on public.categories, public.recurring_rules, public.transactions to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- RLS: cada usuário só enxerga e altera os próprios registros.
 -- Sem política de DELETE: exclusão é sempre soft delete (deleted_at / archived).
 -- ---------------------------------------------------------------------------

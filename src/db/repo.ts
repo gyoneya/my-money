@@ -1,0 +1,151 @@
+// Toda escrita vai primeiro ao IndexedDB com pending = 1; o sync envia depois.
+import { todayISO } from '../lib/dates'
+import { MAX_CENTS } from '../lib/money'
+import { db as defaultDb, type MyMoneyDB } from './db'
+import { SEED_CATEGORIES } from './seed'
+import type { Category, Kind, Status, Transaction } from './types'
+
+const now = () => new Date().toISOString()
+export const newId = () => crypto.randomUUID()
+
+/** Lançamento com data futura nasce previsto; até hoje, realizado. */
+export function statusFor(occurredOn: string, today: string = todayISO()): Status {
+  return occurredOn > today ? 'planned' : 'done'
+}
+
+function assertAmount(cents: number) {
+  if (!Number.isSafeInteger(cents) || cents <= 0 || cents > MAX_CENTS) {
+    throw new Error(`Valor inválido: ${cents}`)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Categorias
+// ---------------------------------------------------------------------------
+
+/** Categorias ativas do tipo, na ordem definida pelo usuário. */
+export async function listCategories(kind: Kind, db: MyMoneyDB = defaultDb): Promise<Category[]> {
+  const all = await db.categories.where('kind').equals(kind).toArray()
+  return all.filter((c) => !c.archived).sort((a, b) => a.sort_order - b.sort_order)
+}
+
+export async function createCategory(
+  input: { kind: Kind; name: string; icon?: string | null },
+  db: MyMoneyDB = defaultDb,
+): Promise<Category> {
+  const name = input.name.trim()
+  if (!name) throw new Error('Nome obrigatório')
+  return db.transaction('rw', db.categories, async () => {
+    const same = await db.categories.where('kind').equals(input.kind).toArray()
+    const category: Category = {
+      id: newId(),
+      kind: input.kind,
+      name,
+      icon: input.icon?.trim() || null,
+      sort_order: same.reduce((max, c) => Math.max(max, c.sort_order), -1) + 1,
+      monthly_budget_cents: null,
+      archived: false,
+      updated_at: now(),
+      pending: 1,
+    }
+    await db.categories.add(category)
+    return category
+  })
+}
+
+export async function updateCategory(
+  id: string,
+  patch: Partial<Pick<Category, 'name' | 'icon' | 'sort_order' | 'monthly_budget_cents' | 'archived'>>,
+  db: MyMoneyDB = defaultDb,
+): Promise<void> {
+  if (patch.name !== undefined && !patch.name.trim()) throw new Error('Nome obrigatório')
+  await db.categories.update(id, { ...patch, updated_at: now(), pending: 1 })
+}
+
+/** Cria as categorias iniciais se ainda não houver nenhuma. Retorna true se criou. */
+export async function seedCategoriesIfEmpty(db: MyMoneyDB = defaultDb): Promise<boolean> {
+  return db.transaction('rw', db.categories, async () => {
+    if ((await db.categories.count()) > 0) return false
+    const ts = now()
+    const rows: Category[] = (Object.keys(SEED_CATEGORIES) as Kind[]).flatMap((kind) =>
+      SEED_CATEGORIES[kind].map(([name, icon], i) => ({
+        id: newId(),
+        kind,
+        name,
+        icon,
+        sort_order: i,
+        monthly_budget_cents: null,
+        archived: false,
+        updated_at: ts,
+        pending: 1 as const,
+      })),
+    )
+    await db.categories.bulkAdd(rows)
+    return true
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Lançamentos
+// ---------------------------------------------------------------------------
+
+export interface NewTransaction {
+  kind: Kind
+  amount_cents: number
+  category_id: string
+  occurred_on: string
+  note?: string | null
+}
+
+export function buildTransaction(input: NewTransaction, today: string = todayISO()): Transaction {
+  assertAmount(input.amount_cents)
+  const ts = now()
+  return {
+    id: newId(),
+    kind: input.kind,
+    status: statusFor(input.occurred_on, today),
+    amount_cents: input.amount_cents,
+    category_id: input.category_id,
+    occurred_on: input.occurred_on,
+    note: input.note?.trim() || null,
+    installment_group_id: null,
+    installment_number: null,
+    installment_total: null,
+    recurring_rule_id: null,
+    created_at: ts,
+    updated_at: ts,
+    deleted_at: null,
+    pending: 1,
+  }
+}
+
+export async function addTransactions(rows: Transaction[], db: MyMoneyDB = defaultDb): Promise<void> {
+  await db.transactions.bulkAdd(rows)
+}
+
+/** Soft delete (necessário para o sync propagar a exclusão). Usado também pelo "Desfazer". */
+export async function softDeleteTransactions(ids: string[], db: MyMoneyDB = defaultDb): Promise<void> {
+  const ts = now()
+  await db.transaction('rw', db.transactions, async () => {
+    for (const id of ids) await db.transactions.update(id, { deleted_at: ts, updated_at: ts, pending: 1 })
+  })
+}
+
+/** Lançamentos não excluídos com data dentro do mês `AAAA-MM`, ordenados por data. */
+export async function listTransactionsOfMonth(month: string, db: MyMoneyDB = defaultDb): Promise<Transaction[]> {
+  const rows = await db.transactions
+    .where('occurred_on')
+    .between(`${month}-01`, `${month}-31`, true, true)
+    .toArray()
+  return rows.filter((t) => !t.deleted_at).sort((a, b) => a.occurred_on.localeCompare(b.occurred_on))
+}
+
+/** Quantos registros ainda não foram enviados ao servidor. */
+export async function countPending(db: MyMoneyDB = defaultDb): Promise<number> {
+  const [c, r, t] = await Promise.all([
+    db.categories.where('pending').equals(1).count(),
+    db.recurring_rules.where('pending').equals(1).count(),
+    db.transactions.where('pending').equals(1).count(),
+  ])
+  return c + r + t
+}

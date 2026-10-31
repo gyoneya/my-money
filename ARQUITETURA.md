@@ -157,7 +157,8 @@ create index on transactions (user_id, occurred_on);
 - Promoção `planned → done` roda ao abrir o app.
 
 ## Autenticação
-- Supabase Auth com **código OTP por e-mail (6 dígitos)**, não magic link: no iOS o link abre no Safari, fora do PWA instalado.
+- Supabase Auth com **e-mail e senha**. O usuário é criado no painel do Supabase (Add user, Auto Confirm); cadastro pelo app desligado.
+  - Motivo: OTP exige editar o template de e-mail, o que no plano free pede SMTP próprio; magic link no iOS abre no Safari, fora do PWA.
 - Sessão persistente; login uma vez por dispositivo.
 
 ## Categorias iniciais (editáveis)
@@ -165,7 +166,7 @@ create index on transactions (user_id, occurred_on);
 - **Receita**: Salário, Extra, Vendas, Rendimentos, Outros.
 
 ## Fases
-1. **MVP — lançar**: PWA instalável, auth OTP, tela Lançar (com parcelas e "+ categoria"), Extrato, Config de categorias, offline + sync, deploy.
+1. **MVP — lançar**: PWA instalável, auth e-mail/senha, tela Lançar (com parcelas e "+ categoria"), Extrato, Config de categorias, offline + sync, deploy.
 2. **Análise**: aba Análise completa (Posso gastar, resumo, por categoria, compromissos futuros, simulador, evolução), orçamento por categoria, recorrentes.
 3. **Refino**: layout desktop caprichado, exportar CSV, ajustes de UX a partir do uso real.
 

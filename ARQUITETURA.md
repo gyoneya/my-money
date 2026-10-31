@@ -49,7 +49,7 @@ Prioridade 1: lançamento rápido. Prioridade 2: análise dentro do app (sem BI 
 ```
 [ Despesa | Receita ]          toggle, default = Despesa
         R$ 0,00                display grande
-[ grade de categorias ][ + ]   botões grandes (ícone + nome), 4 colunas; "+" cria categoria
+[ grade de categorias ]        botões grandes (ícone + nome), 4 colunas
 [ 1 ][ 2 ][ 3 ]
 [ 4 ][ 5 ][ 6 ]                teclado numérico PRÓPRIO (não o do sistema)
 [ 7 ][ 8 ][ 9 ]
@@ -66,7 +66,7 @@ Regras:
 - **Data**: default hoje (fuso America/Sao_Paulo). Toque → Ontem / Anteontem / calendário.
 - **Parcelas** (só despesa): toque em `1x` → seletor rápido À vista–12x + campo "Outro" (13–60x); mostra `10x de R$ 120,00`.
 - **Nota**: opcional, antes de tocar na categoria.
-- **"+" na grade**: modal mínimo (nome + ícone opcional) → cria categoria do tipo atual e já seleciona/salva o lançamento se houver valor digitado.
+- Sem "+" na grade: categorias são criadas na Config (decisão do usuário, para a grade ficar só com o uso diário).
 - Teclado próprio porque o iOS não abre o teclado do sistema automaticamente; fallback de acessibilidade: `<input inputmode="decimal">`.
 - Categoria tocada sem valor = não salva (shake no display).
 

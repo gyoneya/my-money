@@ -3,14 +3,12 @@ import { CategoryGrid } from '../components/CategoryGrid'
 import { DateSheet } from '../components/DateSheet'
 import { Icon, type IconName } from '../components/Icon'
 import { Keypad } from '../components/Keypad'
-import { NewCategorySheet } from '../components/NewCategorySheet'
 import { NoteSheet } from '../components/NoteSheet'
 import { Toast, type ToastData } from '../components/Toast'
 import { InstallmentsSheet } from '../components/InstallmentsSheet'
 import {
   addTransactions,
   buildInstallmentTransactions,
-  createCategory,
   listCategories,
   softDeleteTransactions,
 } from '../db/repo'
@@ -22,7 +20,7 @@ import { formatBRL, parseBRL, pressKey } from '../lib/money'
 
 const KIND_LABEL: Record<Kind, string> = { expense: 'Despesa', income: 'Receita' }
 
-type SheetId = 'date' | 'note' | 'category' | 'installments'
+type SheetId = 'date' | 'note' | 'installments'
 
 export function LaunchScreen() {
   const [kind, setKind] = useState<Kind>('expense')
@@ -104,12 +102,6 @@ export function LaunchScreen() {
     reset()
   }
 
-  async function createAndSave(name: string, icon: string | null) {
-    const category = await createCategory({ kind, name, icon })
-    setSheet(null)
-    await reloadCategories(kind)
-    if (cents > 0) await save(category)
-  }
 
   const amountColor = cents === 0 ? 'text-muted' : kind === 'expense' ? 'text-negative' : 'text-positive'
 
@@ -174,7 +166,7 @@ export function LaunchScreen() {
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <div className="mt-auto">
-            <CategoryGrid categories={categories} onPick={save} onAdd={() => setSheet('category')} />
+            <CategoryGrid categories={categories} onPick={save} />
           </div>
         </div>
         <Toast toast={toast} onClose={closeToast} />
@@ -213,9 +205,6 @@ export function LaunchScreen() {
           }}
           onClose={closeSheet}
         />
-      )}
-      {sheet === 'category' && (
-        <NewCategorySheet kind={kind} hasAmount={cents > 0} onCreate={createAndSave} onClose={closeSheet} />
       )}
     </div>
   )

@@ -15,6 +15,10 @@ export class MyMoneyDB extends Dexie {
       transactions: 'id, occurred_on, status, installment_group_id, pending',
       meta: 'key',
     })
+    // v2: índice para achar os lançamentos de uma regra recorrente.
+    this.version(2).stores({
+      transactions: 'id, occurred_on, status, installment_group_id, recurring_rule_id, pending',
+    })
   }
 }
 

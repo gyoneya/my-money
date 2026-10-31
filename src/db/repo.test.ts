@@ -8,6 +8,7 @@ import {
   promotePlanned,
   countPending,
   createCategory,
+  ensureLocalOwner,
   listCategories,
   listTransactionsOfMonth,
   seedCategoriesIfEmpty,
@@ -58,6 +59,22 @@ describe('categorias', () => {
     await updateCategory(c.id, { archived: true }, db)
     expect(await listCategories('income', db)).toHaveLength(0)
     expect((await db.categories.get(c.id))!.pending).toBe(1)
+  })
+})
+
+describe('dono dos dados locais', () => {
+  it('primeiro login apaga dados de teste; mesmo usuário preserva; outro usuário apaga', async () => {
+    await seedCategoriesIfEmpty(db)
+    expect(await ensureLocalOwner('u1', db)).toBe(true)
+    expect(await db.categories.count()).toBe(0)
+
+    await seedCategoriesIfEmpty(db)
+    expect(await ensureLocalOwner('u1', db)).toBe(false)
+    expect(await db.categories.count()).toBe(17)
+
+    expect(await ensureLocalOwner('u2', db)).toBe(true)
+    expect(await db.categories.count()).toBe(0)
+    expect((await db.meta.get('owner_id'))!.value).toBe('u2')
   })
 })
 

@@ -1,23 +1,50 @@
+import type { Session } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
-import { promotePlanned, seedCategoriesIfEmpty } from './db/repo'
+import { bootstrap } from './bootstrap'
+import { supabase } from './lib/supabase'
 import { LaunchScreen } from './screens/LaunchScreen'
+import { LoginScreen } from './screens/LoginScreen'
 import { DEFAULT_TAB, TABS, type TabId } from './tabs'
 import { TabIcon } from './TabIcon'
 
 export default function App() {
-  const [tab, setTab] = useState<TabId>(DEFAULT_TAB)
-  const [ready, setReady] = useState(false)
-  const current = TABS.find((t) => t.id === tab)!
+  // undefined = ainda lendo a sessão salva no aparelho
+  const [session, setSession] = useState<Session | null | undefined>(undefined)
+  const [readyFor, setReadyFor] = useState<string | null>(null)
 
-  // Seed provisório até o login (etapa 8): categorias iniciais locais.
   useEffect(() => {
-    Promise.all([seedCategoriesIfEmpty(), promotePlanned()]).finally(() => setReady(true))
+    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s))
+    return () => data.subscription.unsubscribe()
   }, [])
+
+  const userId = session?.user.id ?? null
+
+  useEffect(() => {
+    if (!userId) return
+    let alive = true
+    bootstrap(userId)
+      .catch((e) => console.error('bootstrap', e))
+      .finally(() => alive && setReadyFor(userId))
+    return () => {
+      alive = false
+    }
+  }, [userId])
+
+  if (session === undefined) return null
+  if (!session) return <LoginScreen />
+  if (readyFor !== userId) return null
+  return <MainApp />
+}
+
+function MainApp() {
+  const [tab, setTab] = useState<TabId>(DEFAULT_TAB)
+  const current = TABS.find((t) => t.id === tab)!
 
   return (
     <div className="flex h-full flex-col">
       <main className="min-h-0 flex-1 overflow-y-auto">
-        {!ready ? null : tab === 'lancar' ? (
+        {tab === 'lancar' ? (
           <LaunchScreen />
         ) : (
           <div className="flex h-full items-center justify-center p-4">

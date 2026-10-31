@@ -182,6 +182,24 @@ export async function listTransactionsOfMonth(month: string, db: MyMoneyDB = def
   return rows.filter((t) => !t.deleted_at).sort((a, b) => a.occurred_on.localeCompare(b.occurred_on))
 }
 
+// ---------------------------------------------------------------------------
+// Dono dos dados locais
+// ---------------------------------------------------------------------------
+
+/**
+ * Garante que os dados locais pertencem ao usuário logado. No primeiro login
+ * (ou troca de usuário) apaga tudo que havia no aparelho. Retorna true se apagou.
+ */
+export async function ensureLocalOwner(userId: string, db: MyMoneyDB = defaultDb): Promise<boolean> {
+  return db.transaction('rw', [db.categories, db.recurring_rules, db.transactions, db.meta], async () => {
+    const owner = await db.meta.get('owner_id')
+    if (owner?.value === userId) return false
+    await Promise.all([db.categories.clear(), db.recurring_rules.clear(), db.transactions.clear(), db.meta.clear()])
+    await db.meta.put({ key: 'owner_id', value: userId })
+    return true
+  })
+}
+
 /** Quantos registros ainda não foram enviados ao servidor. */
 export async function countPending(db: MyMoneyDB = defaultDb): Promise<number> {
   const [c, r, t] = await Promise.all([

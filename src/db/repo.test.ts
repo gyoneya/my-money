@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { MyMoneyDB } from './db'
 import {
   addTransactions,
+  buildInstallmentTransactions,
   buildTransaction,
+  promotePlanned,
   countPending,
   createCategory,
   listCategories,
@@ -88,6 +90,50 @@ describe('lançamentos', () => {
     await softDeleteTransactions([a.id], db)
     expect((await listTransactionsOfMonth('2026-10', db)).map((t) => t.id)).toEqual([b.id])
     expect((await db.transactions.get(a.id))!.deleted_at).not.toBeNull()
+  })
+
+  it('parcelado: N lançamentos ligados, 1ª realizada, futuras previstas', () => {
+    const rows = buildInstallmentTransactions({ ...base, amount_cents: 10000, occurred_on: '2026-10-31' }, 3, '2026-10-31')
+    expect(rows.map((r) => [r.amount_cents, r.occurred_on, r.status, r.installment_number, r.installment_total])).toEqual([
+      [3334, '2026-10-31', 'done', 1, 3],
+      [3333, '2026-11-30', 'planned', 2, 3],
+      [3333, '2026-12-31', 'planned', 3, 3],
+    ])
+    expect(new Set(rows.map((r) => r.installment_group_id)).size).toBe(1)
+    expect(rows[0].installment_group_id).not.toBeNull()
+    expect(new Set(rows.map((r) => r.id)).size).toBe(3)
+  })
+
+  it('compra retroativa: parcelas já vencidas nascem realizadas', () => {
+    const rows = buildInstallmentTransactions({ ...base, amount_cents: 300, occurred_on: '2026-08-10' }, 4, '2026-10-31')
+    expect(rows.map((r) => r.status)).toEqual(['done', 'done', 'done', 'planned'])
+  })
+
+  it('1x = lançamento simples', () => {
+    const rows = buildInstallmentTransactions({ ...base, occurred_on: '2026-10-31' }, 1)
+    expect(rows).toHaveLength(1)
+    expect(rows[0].installment_group_id).toBeNull()
+  })
+
+  it('rejeita parcelamento inválido', () => {
+    const t = { ...base, occurred_on: '2026-10-31' }
+    expect(() => buildInstallmentTransactions({ ...t, kind: 'income' }, 2)).toThrow()
+    expect(() => buildInstallmentTransactions(t, 25)).toThrow()
+    expect(() => buildInstallmentTransactions({ ...t, amount_cents: 3 }, 4)).toThrow()
+  })
+
+  it('promove previstos vencidos para realizados', async () => {
+    const rows = buildInstallmentTransactions({ ...base, amount_cents: 300, occurred_on: '2026-10-31' }, 3, '2026-10-31')
+    await addTransactions(rows, db)
+    await softDeleteTransactions([rows[2].id], db)
+    await db.transactions.update(rows[1].id, { pending: 0 })
+
+    expect(await promotePlanned('2026-11-29', db)).toBe(0)
+    expect(await promotePlanned('2026-12-31', db)).toBe(1) // a 3ª foi excluída
+    const second = (await db.transactions.get(rows[1].id))!
+    expect(second.status).toBe('done')
+    expect(second.pending).toBe(1)
+    expect((await db.transactions.get(rows[2].id))!.status).toBe('planned')
   })
 
   it('conta pendentes de sync', async () => {

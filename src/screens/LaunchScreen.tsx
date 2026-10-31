@@ -6,20 +6,29 @@ import { Keypad } from '../components/Keypad'
 import { NewCategorySheet } from '../components/NewCategorySheet'
 import { NoteSheet } from '../components/NoteSheet'
 import { Toast, type ToastData } from '../components/Toast'
-import { addTransactions, buildTransaction, createCategory, listCategories, softDeleteTransactions } from '../db/repo'
+import { InstallmentsSheet } from '../components/InstallmentsSheet'
+import {
+  addTransactions,
+  buildInstallmentTransactions,
+  createCategory,
+  listCategories,
+  softDeleteTransactions,
+} from '../db/repo'
 import type { Category, Kind } from '../db/types'
 import { relativeDayLabel, todayISO } from '../lib/dates'
+import { splitAmount } from '../lib/installments'
 import { formatBRL, parseBRL, pressKey } from '../lib/money'
 
 const KIND_LABEL: Record<Kind, string> = { expense: 'Despesa', income: 'Receita' }
 
-type SheetId = 'date' | 'note' | 'category'
+type SheetId = 'date' | 'note' | 'category' | 'installments'
 
 export function LaunchScreen() {
   const [kind, setKind] = useState<Kind>('expense')
   const [cents, setCents] = useState(0)
   const [date, setDate] = useState<string | null>(null) // null = hoje
   const [note, setNote] = useState('')
+  const [installments, setInstallments] = useState(1)
   const [categories, setCategories] = useState<Category[]>([])
   const [sheet, setSheet] = useState<SheetId | null>(null)
   const [shake, setShake] = useState(0)
@@ -60,6 +69,12 @@ export function LaunchScreen() {
     setCents(0)
     setDate(null)
     setNote('')
+    setInstallments(1)
+  }
+
+  function changeKind(k: Kind) {
+    setKind(k)
+    if (k === 'income') setInstallments(1) // parcelas só para despesa
   }
 
   function rejectEmpty() {
@@ -68,15 +83,20 @@ export function LaunchScreen() {
   }
 
   async function save(category: Category) {
-    if (cents <= 0) return rejectEmpty()
-    const tx = buildTransaction({ kind, amount_cents: cents, category_id: category.id, occurred_on: occurredOn, note })
-    await addTransactions([tx])
+    if (cents <= 0 || (installments > 1 && !splitAmount(cents, installments))) return rejectEmpty()
+    const rows = buildInstallmentTransactions(
+      { kind, amount_cents: cents, category_id: category.id, occurred_on: occurredOn, note },
+      installments,
+      today,
+    )
+    await addTransactions(rows)
     navigator.vibrate?.(30)
     const when = occurredOn === today ? '' : ` · ${relativeDayLabel(occurredOn, today)}`
+    const times = installments > 1 ? ` · ${installments}x` : ''
     setToast({
       id: Date.now(),
-      text: `${formatBRL(cents)} · ${category.name}${when} ✓`,
-      onUndo: () => void softDeleteTransactions([tx.id]),
+      text: `${formatBRL(cents)} · ${category.name}${times}${when} ✓`,
+      onUndo: () => void softDeleteTransactions(rows.map((r) => r.id)),
     })
     reset()
   }
@@ -103,7 +123,7 @@ export function LaunchScreen() {
               type="button"
               role="tab"
               aria-selected={active}
-              onClick={() => setKind(k)}
+              onClick={() => changeKind(k)}
               className={`rounded-lg py-2 text-sm font-semibold ${active ? `bg-surface-2 ${color}` : 'text-muted'}`}
             >
               {KIND_LABEL[k]}
@@ -117,6 +137,11 @@ export function LaunchScreen() {
         <p className={`text-[2.75rem] leading-none font-semibold tracking-tight tabular-nums ${amountColor}`} aria-hidden>
           {formatBRL(cents)}
         </p>
+        {installments > 1 && (
+          <p className="mt-1.5 text-sm text-muted tabular-nums">
+            {installments}x de {formatBRL(splitAmount(cents, installments)?.at(-1) ?? 0)}
+          </p>
+        )}
         <label className="sr-only">
           Valor
           <input
@@ -137,6 +162,11 @@ export function LaunchScreen() {
         <Chip icon="calendar" active={date !== null} onClick={() => setSheet('date')}>
           {relativeDayLabel(occurredOn, today)}
         </Chip>
+        {kind === 'expense' && (
+          <Chip icon="layers" active={installments > 1} onClick={() => setSheet('installments')}>
+            {installments}x
+          </Chip>
+        )}
         <Chip icon="note" active={note !== ''} onClick={() => setSheet('note')} grow>
           {note || 'Nota'}
         </Chip>
@@ -160,6 +190,17 @@ export function LaunchScreen() {
           value={note}
           onSave={(n) => {
             setNote(n)
+            setSheet(null)
+          }}
+          onClose={closeSheet}
+        />
+      )}
+      {sheet === 'installments' && (
+        <InstallmentsSheet
+          value={installments}
+          totalCents={cents}
+          onPick={(n) => {
+            setInstallments(n)
             setSheet(null)
           }}
           onClose={closeSheet}

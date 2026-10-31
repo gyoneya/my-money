@@ -1,5 +1,6 @@
 // Toda escrita vai primeiro ao IndexedDB com pending = 1; o sync envia depois.
 import { todayISO } from '../lib/dates'
+import { installmentDates, MAX_INSTALLMENTS, MIN_INSTALLMENTS, splitAmount } from '../lib/installments'
 import { MAX_CENTS } from '../lib/money'
 import { db as defaultDb, type MyMoneyDB } from './db'
 import { SEED_CATEGORIES } from './seed'
@@ -117,6 +118,47 @@ export function buildTransaction(input: NewTransaction, today: string = todayISO
     deleted_at: null,
     pending: 1,
   }
+}
+
+/**
+ * Compra parcelada: N lançamentos ligados por installment_group_id.
+ * `amount_cents` é o TOTAL da compra. Parcelas futuras nascem `planned`.
+ */
+export function buildInstallmentTransactions(
+  input: NewTransaction,
+  n: number,
+  today: string = todayISO(),
+): Transaction[] {
+  if (n === 1) return [buildTransaction(input, today)]
+  if (input.kind !== 'expense') throw new Error('Parcelamento só para despesa')
+  if (!Number.isInteger(n) || n < MIN_INSTALLMENTS || n > MAX_INSTALLMENTS) {
+    throw new Error(`Parcelas inválidas: ${n}`)
+  }
+  assertAmount(input.amount_cents)
+  const amounts = splitAmount(input.amount_cents, n)
+  if (!amounts) throw new Error('Valor menor que o número de parcelas')
+  const dates = installmentDates(input.occurred_on, n)
+  const groupId = newId()
+  return amounts.map((amount, i) => ({
+    ...buildTransaction({ ...input, amount_cents: amount, occurred_on: dates[i] }, today),
+    installment_group_id: groupId,
+    installment_number: i + 1,
+    installment_total: n,
+  }))
+}
+
+/** `planned` com data ≤ hoje vira `done`. Roda ao abrir o app. Retorna quantos mudaram. */
+export async function promotePlanned(today: string = todayISO(), db: MyMoneyDB = defaultDb): Promise<number> {
+  return db.transaction('rw', db.transactions, async () => {
+    const due = await db.transactions
+      .where('status')
+      .equals('planned')
+      .filter((t) => t.occurred_on <= today && !t.deleted_at)
+      .toArray()
+    const ts = now()
+    for (const t of due) await db.transactions.update(t.id, { status: 'done', updated_at: ts, pending: 1 })
+    return due.length
+  })
 }
 
 export async function addTransactions(rows: Transaction[], db: MyMoneyDB = defaultDb): Promise<void> {

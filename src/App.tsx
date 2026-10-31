@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { seedCategoriesIfEmpty } from './db/repo'
+import { promotePlanned, seedCategoriesIfEmpty } from './db/repo'
 import { LaunchScreen } from './screens/LaunchScreen'
 import { DEFAULT_TAB, TABS, type TabId } from './tabs'
 import { TabIcon } from './TabIcon'
@@ -9,9 +9,9 @@ export default function App() {
   const [ready, setReady] = useState(false)
   const current = TABS.find((t) => t.id === tab)!
 
-  // Provisório até o login (etapa 8): categorias iniciais locais.
+  // Seed provisório até o login (etapa 8): categorias iniciais locais.
   useEffect(() => {
-    seedCategoriesIfEmpty().finally(() => setReady(true))
+    Promise.all([seedCategoriesIfEmpty(), promotePlanned()]).finally(() => setReady(true))
   }, [])
 
   return (

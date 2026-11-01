@@ -7,6 +7,7 @@ import { budgetLevel, byCategory, canSpend, monthReport, type BudgetLevel } from
 import { formatMonthLabel, monthKey, todayISO } from '../lib/dates'
 import { formatBRL } from '../lib/money'
 import { CommitmentsChart, EvolutionChart } from './AnalysisCharts'
+import { SimulatorCard } from './SimulatorCard'
 
 const LEVEL_TEXT: Record<BudgetLevel, string> = {
   ok: 'text-positive',
@@ -49,6 +50,7 @@ export function AnalysisScreen({ onOpenCategory }: { onOpenCategory: (categoryId
           <Card title="Compromissos futuros">
             <CommitmentsChart rows={rows} fromMonth={month} />
           </Card>
+          <SimulatorCard rows={rows} />
           <Card title="Evolução (12 meses)">
             <EvolutionChart rows={rows} endMonth={month} />
           </Card>

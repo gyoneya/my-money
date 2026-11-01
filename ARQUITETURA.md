@@ -88,7 +88,7 @@ Seletor de mês (default = atual). Blocos, nesta ordem:
 5. **Simulador de compra**: valor + nº de parcelas (+ data, default hoje) → mostra, sem salvar:
    - **Mês atual** (destaque): "Disponível" antes → depois da compra (1x = valor cheio; parcelado = 1ª parcela).
    - **Meses seguintes**: "Disponível" antes → depois em cada mês com parcela; alerta vermelho em qualquer mês que fique negativo.
-   - Botão "Lançar esta compra" → cria o lançamento parcelado direto do simulador.
+   - Botão "Lançar esta compra" → pede categoria (e nota opcional) e cria o lançamento parcelado direto do simulador.
 6. **Evolução**: receitas vs. despesas dos últimos 12 meses.
 
 Layout responsivo: 1 coluna no celular; grade de 2–3 colunas no desktop.

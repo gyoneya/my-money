@@ -43,4 +43,4 @@ React + TypeScript + Vite · Tailwind · Dexie (IndexedDB) · Supabase (Postgres
 - **Android**: Chrome → menu → Instalar app.
 
 ## Licença
-[MIT](LICENSE).
+[GNU AGPL v3](LICENSE) (ou posterior). Copyright © 2026 Gustavo Yoneya. Versões modificadas, inclusive publicadas como site, precisam ter o código aberto sob a mesma licença.

@@ -41,3 +41,6 @@ React + TypeScript + Vite · Tailwind · Dexie (IndexedDB) · Supabase (Postgres
 ## Instalar no celular
 - **iPhone**: Safari → Compartilhar → Adicionar à Tela de Início.
 - **Android**: Chrome → menu → Instalar app.
+
+## Licença
+[MIT](LICENSE).

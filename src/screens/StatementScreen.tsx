@@ -125,7 +125,7 @@ export function StatementScreen({
 function TransactionRow({ tx, category, onClick }: { tx: Transaction; category?: Category; onClick: () => void }) {
   const planned = tx.status === 'planned'
   const value = signedCents(tx)
-  // A nota diz o que foi: é o destaque. Sem nota, o destaque é a categoria.
+  // A descrição diz o que foi: é o destaque. Sem descrição (lançamentos antigos), a categoria.
   const categoryName = category?.name ?? 'Sem categoria'
   const title = tx.note ?? categoryName
   const detail = [tx.note ? categoryName : null, tx.installment_total ? `${tx.installment_number}/${tx.installment_total}` : null]

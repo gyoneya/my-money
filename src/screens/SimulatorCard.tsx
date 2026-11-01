@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CategoryGrid } from '../components/CategoryGrid'
 import { Sheet } from '../components/Sheet'
 import { addTransactions, buildInstallmentTransactions, listCategories } from '../db/repo'
@@ -161,7 +161,7 @@ export function SimulatorCard({ rows }: { rows: Transaction[] }) {
   )
 }
 
-/** Categoria (obrigatória) e nota (opcional) para lançar a compra simulada. */
+/** Descrição e categoria (ambas obrigatórias) para lançar a compra simulada. */
 function LaunchSheet({
   onPick,
   onClose,
@@ -171,21 +171,37 @@ function LaunchSheet({
 }) {
   const [categories, setCategories] = useState<Category[]>([])
   const [note, setNote] = useState('')
+  const [noteMissing, setNoteMissing] = useState(false)
+  const noteRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
     void listCategories('expense').then(setCategories)
   }, [])
 
   return (
-    <Sheet title="Lançar em qual categoria?" onClose={onClose}>
+    <Sheet title="Descreva e escolha a categoria" onClose={onClose}>
       <div className="flex flex-col gap-3">
-        <CategoryGrid categories={categories} onPick={(c) => onPick(c, note)} />
         <input
+          ref={noteRef}
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={(e) => {
+            setNote(e.target.value)
+            setNoteMissing(false)
+          }}
           maxLength={200}
-          placeholder="Nota (o que foi?)"
-          aria-label="Nota"
-          className="rounded-xl border border-line bg-surface-2 px-4 py-3 text-base text-text outline-none placeholder:text-muted focus:border-brand"
+          placeholder={noteMissing ? 'Descrição obrigatória' : 'Descrição'}
+          aria-label="Descrição"
+          aria-required="true"
+          className={`rounded-xl border bg-surface-2 px-4 py-3 text-base text-text outline-none ${
+            noteMissing ? 'border-warning placeholder:text-warning' : 'border-line placeholder:text-muted focus:border-brand'
+          }`}
+        />
+        <CategoryGrid
+          categories={categories}
+          onPick={(c) => {
+            if (note.trim()) return onPick(c, note.trim())
+            setNoteMissing(true)
+            noteRef.current?.focus()
+          }}
         />
       </div>
     </Sheet>

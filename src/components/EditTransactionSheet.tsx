@@ -32,6 +32,8 @@ export function EditTransactionSheet({ tx, onClose }: { tx: Transaction; onClose
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [shake, setShake] = useState(0)
   const touched = useRef(false)
+  const noteRef = useRef<HTMLInputElement>(null)
+  const [noteMissing, setNoteMissing] = useState(false)
 
   const today = todayISO()
 
@@ -63,6 +65,11 @@ export function EditTransactionSheet({ tx, onClose }: { tx: Transaction; onClose
   async function save() {
     if (!valid) {
       setShake((n) => n + 1)
+      return
+    }
+    if (!note.trim()) {
+      setNoteMissing(true)
+      noteRef.current?.focus()
       return
     }
     const edit = { amount_cents: cents, category_id: categoryId, occurred_on: date, note }
@@ -123,12 +130,19 @@ export function EditTransactionSheet({ tx, onClose }: { tx: Transaction; onClose
           </div>
 
           <input
+            ref={noteRef}
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={(e) => {
+              setNote(e.target.value)
+              setNoteMissing(false)
+            }}
             maxLength={200}
-            placeholder="Nota"
-            aria-label="Nota"
-            className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-base text-text outline-none placeholder:text-muted focus:border-brand"
+            placeholder={noteMissing ? 'Descrição obrigatória' : 'Descrição'}
+            aria-label="Descrição"
+            aria-required="true"
+            className={`rounded-xl border bg-surface-2 px-4 py-2.5 text-base text-text outline-none ${
+              noteMissing ? 'border-warning placeholder:text-warning' : 'border-line placeholder:text-muted focus:border-brand'
+            }`}
           />
 
           <Keypad

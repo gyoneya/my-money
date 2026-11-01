@@ -31,6 +31,9 @@ export function LaunchScreen() {
   const [sheet, setSheet] = useState<SheetId | null>(null)
   const [shake, setShake] = useState(0)
   const [toast, setToast] = useState<ToastData | null>(null)
+  const [pendingCategory, setPendingCategory] = useState<Category | null>(null)
+  const noteRef = useRef<HTMLInputElement>(null)
+  const noteBoxRef = useRef<HTMLDivElement>(null)
 
   const today = todayISO()
   const occurredOn = date ?? today
@@ -86,10 +89,12 @@ export function LaunchScreen() {
     setDate(null)
     setNote('')
     setInstallments(1)
+    setPendingCategory(null)
   }
 
   function changeKind(k: Kind) {
     setKind(k)
+    setPendingCategory(null)
     if (k === 'income') setInstallments(1) // parcelas só para despesa
   }
 
@@ -100,6 +105,22 @@ export function LaunchScreen() {
 
   async function save(category: Category) {
     if (cents <= 0 || (installments > 1 && !splitAmount(cents, installments))) return rejectEmpty()
+    // Descrição obrigatória: guarda a categoria tocada e pede a descrição; o "OK" do
+    // teclado do sistema conclui o lançamento sem precisar tocar na categoria de novo.
+    if (!note.trim()) {
+      setPendingCategory(category)
+      navigator.vibrate?.([20, 40, 20])
+      // Treme sem recriar o campo (recriar tiraria o foco/teclado).
+      const box = noteBoxRef.current
+      if (box) {
+        box.classList.remove('shake')
+        void box.offsetWidth
+        box.classList.add('shake')
+      }
+      noteRef.current?.focus()
+      return
+    }
+    setPendingCategory(null)
     const rows = buildInstallmentTransactions(
       { kind, amount_cents: cents, category_id: category.id, occurred_on: occurredOn, note },
       installments,
@@ -111,7 +132,7 @@ export function LaunchScreen() {
     const times = installments > 1 ? ` · ${installments}x` : ''
     setToast({
       id: Date.now(),
-      text: `${formatBRL(cents)} · ${category.name}${times}${when} ✓`,
+      text: `${formatBRL(cents)} · ${note.trim()} · ${category.name}${times}${when} ✓`,
       onUndo: () => void softDeleteTransactions(rows.map((r) => r.id)),
     })
     reset()
@@ -186,24 +207,32 @@ export function LaunchScreen() {
 
       {/* Teclado em painel próprio, visualmente separado das categorias */}
       <div className="-mx-3 -mb-3 flex flex-col gap-1.5 rounded-t-2xl bg-surface-2 px-3 pt-3 pb-3">
-        {/* Nota sempre à vista (opcional): tocar abre o teclado do sistema */}
-        <div className="relative">
+        {/* Descrição (obrigatória) sempre à vista: tocar abre o teclado do sistema */}
+        <div ref={noteBoxRef} className="relative">
           <input
+            ref={noteRef}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return
+              e.currentTarget.blur()
+              if (pendingCategory && note.trim()) void save(pendingCategory)
+            }}
             maxLength={200}
-            placeholder="Nota (o que foi?)"
-            aria-label="Nota"
-            enterKeyHint="done"
+            placeholder={pendingCategory ? `Descrição para ${pendingCategory.name}` : 'Descrição'}
+            aria-label="Descrição"
+            aria-required="true"
+            enterKeyHint={pendingCategory ? 'send' : 'done'}
             autoCapitalize="sentences"
-            className="h-12 w-full rounded-xl bg-key px-4 pr-11 text-base text-text outline-none placeholder:text-muted focus:ring-1 focus:ring-brand"
+            className={`h-12 w-full rounded-xl bg-key px-4 pr-11 text-base text-text outline-none placeholder:text-muted focus:ring-1 ${
+              pendingCategory && !note.trim() ? 'ring-1 ring-warning placeholder:text-warning focus:ring-warning' : 'focus:ring-brand'
+            }`}
           />
           {note && (
             <button
               type="button"
               onClick={() => setNote('')}
-              aria-label="Limpar nota"
+              aria-label="Limpar descrição"
               className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted"
             >
               <Icon name="close" className="h-4 w-4" />

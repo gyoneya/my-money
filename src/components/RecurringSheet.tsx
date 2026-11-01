@@ -22,6 +22,8 @@ export function RecurringSheet({ rule, onClose }: { rule: RecurringRule | null; 
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [shake, setShake] = useState(0)
   const touched = useRef(false)
+  const noteRef = useRef<HTMLInputElement>(null)
+  const [noteMissing, setNoteMissing] = useState(false)
   const ended = !!rule?.end_month
 
   useEffect(() => {
@@ -37,7 +39,12 @@ export function RecurringSheet({ rule, onClose }: { rule: RecurringRule | null; 
       if (cents > 0 && !category) setPicker('category')
       return
     }
-    const input = { kind, amount_cents: cents, category_id: category.id, day_of_month: day, note: note || null }
+    if (!note.trim()) {
+      setNoteMissing(true)
+      noteRef.current?.focus()
+      return
+    }
+    const input = { kind, amount_cents: cents, category_id: category.id, day_of_month: day, note: note.trim() }
     if (rule) await updateRecurringRule(rule.id, input)
     else await createRecurringRule(input)
     onClose()
@@ -95,12 +102,19 @@ export function RecurringSheet({ rule, onClose }: { rule: RecurringRule | null; 
           </div>
 
           <input
+            ref={noteRef}
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={(e) => {
+              setNote(e.target.value)
+              setNoteMissing(false)
+            }}
             maxLength={200}
-            placeholder="Nota (ex.: Aluguel, Netflix, Salário)"
-            aria-label="Nota"
-            className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-base text-text outline-none placeholder:text-muted focus:border-brand"
+            placeholder={noteMissing ? 'Descrição obrigatória' : 'Descrição (ex.: Aluguel, Netflix, Salário)'}
+            aria-label="Descrição"
+            aria-required="true"
+            className={`rounded-xl border bg-surface-2 px-4 py-2.5 text-base text-text outline-none ${
+              noteMissing ? 'border-warning placeholder:text-warning' : 'border-line placeholder:text-muted focus:border-brand'
+            }`}
           />
 
           <Keypad

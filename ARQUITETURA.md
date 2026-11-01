@@ -9,7 +9,7 @@ Prioridade 1: lançamento rápido. Prioridade 2: análise dentro do app (sem BI 
 2. App abre **direto na tela de lançamento**.
 3. Funciona **offline**; sincroniza quando houver conexão.
 4. Usuário único. Sem multi-conta, sem cartões, sem bancos.
-5. Nenhuma feature pode adicionar passo **obrigatório** ao lançamento.
+5. Nenhuma feature pode adicionar passo **obrigatório** ao lançamento — exceto a **descrição** (decisão do usuário: todo lançamento diz o que foi).
 6. Toda análise acontece **no app**. Nenhuma dependência de Power BI/Excel.
 
 ## Plataforma
@@ -37,7 +37,7 @@ Prioridade 1: lançamento rápido. Prioridade 2: análise dentro do app (sem BI 
 - **Parcelamento**: compra em N parcelas gera N lançamentos ligados por `installment_group_id`.
   - Parcela *i* (1..N) em `data_compra + (i−1) meses` (se o dia não existir no mês, usar o último dia).
   - Valor = total ÷ N em centavos; a diferença de arredondamento vai para a 1ª parcela.
-  - Nota automática: `"3/10"`.
+  - Indicação automática `"3/10"` (não ocupa a descrição).
   - Editar/excluir oferece: "só esta parcela" ou "todas as parcelas".
 - **Recorrentes** (aluguel, assinaturas, salário): regra que gera lançamentos `planned` para os próximos 12 meses.
   - `planned` com data ≤ hoje vira `done` automaticamente; valor editável (ex.: conta de luz varia).
@@ -55,7 +55,7 @@ Prioridade 1: lançamento rápido. Prioridade 2: análise dentro do app (sem BI 
 [ 7 ][ 8 ][ 9 ]
 [00 ][ 0 ][ ⌫ ]
 [ 📅 Hoje ] [ 1x ]           opcionais, discretos (junto do valor)
-[ Nota (o que foi?)      ]    campo sempre visível acima do teclado (opcional)
+[ Descrição              ]    campo sempre visível acima do teclado (obrigatório)
 ```
 Fluxo:
 1. Digita valor (entrada estilo banco: `1 2 3 4` → `R$ 12,34`). Em compra parcelada, o valor digitado é o **total**.
@@ -66,7 +66,7 @@ Fluxo:
 Regras:
 - **Data**: default hoje (fuso America/Sao_Paulo). Toque → Ontem / Anteontem / calendário.
 - **Parcelas** (só despesa): toque em `1x` → seletor rápido À vista–12x + campo "Outro" (13–60x); mostra `10x de R$ 120,00`.
-- **Nota**: opcional, campo fixo acima do teclado (tocar abre o teclado do sistema); preencher antes de tocar na categoria.
+- **Descrição**: obrigatória, campo fixo acima do teclado (tocar abre o teclado do sistema). Se tocar na categoria sem descrição, o campo pisca e ganha foco; o "Enviar" do teclado conclui o lançamento na categoria tocada. Lançamentos antigos sem descrição continuam válidos (o extrato mostra a categoria).
 - Sem "+" na grade: categorias são criadas na Config (decisão do usuário, para a grade ficar só com o uso diário).
 - Teclado próprio porque o iOS não abre o teclado do sistema automaticamente; fallback de acessibilidade: `<input inputmode="decimal">`.
 - Categoria tocada sem valor = não salva (shake no display).
@@ -88,7 +88,7 @@ Seletor de mês (default = atual). Blocos, nesta ordem:
 5. **Simulador de compra**: valor + nº de parcelas (+ data, default hoje) → mostra, sem salvar:
    - **Mês atual** (destaque): "Disponível" antes → depois da compra (1x = valor cheio; parcelado = 1ª parcela).
    - **Meses seguintes**: "Disponível" antes → depois em cada mês com parcela; alerta vermelho em qualquer mês que fique negativo.
-   - Botão "Lançar esta compra" → pede categoria (e nota opcional) e cria o lançamento parcelado direto do simulador.
+   - Botão "Lançar esta compra" → pede descrição e categoria e cria o lançamento parcelado direto do simulador.
 6. **Evolução**: receitas vs. despesas dos últimos 12 meses.
 
 Layout responsivo: 1 coluna no celular; grade de 2–3 colunas no desktop.
@@ -180,7 +180,7 @@ create index on transactions (user_id, occurred_on);
   - **Amarelo pastel**: avisos, pontos que pedem atenção.
 - Superfícies (cartões, teclado) em cinza quase preto; nada de fundo azulado.
 - Teclado numérico em **painel próprio** (fundo mais claro que as categorias), para separar visualmente as duas áreas.
-- **Alcance do polegar** (estilo Samsung One UI): controles mais usados ficam na parte de baixo da tela. Na tela Lançar, a grade de categorias fica alinhada embaixo, logo acima do teclado; data/parcelas ficam no alto, junto do valor; a nota fica acima do teclado.
+- **Alcance do polegar** (estilo Samsung One UI): controles mais usados ficam na parte de baixo da tela. Na tela Lançar, a grade de categorias fica alinhada embaixo, logo acima do teclado; data/parcelas ficam no alto, junto do valor; a descrição fica acima do teclado.
   - Em listas e painéis, a opção mais usada fica **embaixo à direita** (ex.: "À vista", "Hoje"); opções raras ficam em cima.
   - Avisos (toast com Desfazer) aparecem no meio da tela, não no topo.
 
@@ -204,7 +204,7 @@ create index on transactions (user_id, occurred_on);
 - `user_id` com `default auth.uid()`. Push envia categorias antes dos lançamentos.
 - Primeiro uso exige login online; seed das categorias só se o servidor não tiver nenhuma.
 - "3/10" é exibido a partir de `installment_number/total`; `note` guarda só o texto do usuário.
-- Editar "todas as parcelas": categoria/nota em todas; novo valor = novo total redistribuído; nova data desloca todas.
+- Editar "todas as parcelas": categoria/descrição em todas; novo valor = novo total redistribuído; nova data desloca todas.
 - Saldo = receitas `done` − despesas `done`.
 - "Hoje" calculado em America/Sao_Paulo via `Intl`.
 - Valor máximo por lançamento: R$ 9.999.999,99.
@@ -214,6 +214,6 @@ create index on transactions (user_id, occurred_on);
 ## Instruções para o Claude Code
 - Implementar a Fase 1 nesta ordem: scaffold → migration SQL do Supabase → tela Lançar com Dexie local → parcelas → auth → sync → Extrato → Config de categorias → PWA manifest/service worker → deploy Vercel.
 - A tela Lançar é o produto. Polir antes de qualquer outra tela.
-- Não adicionar campos obrigatórios ao lançamento.
+- Não adicionar campos obrigatórios ao lançamento além da descrição.
 - Perguntar antes de adicionar dependências além das listadas.
 - Segredos em `.env` (fora do Git); documentar setup no README.

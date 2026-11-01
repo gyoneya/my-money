@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { CategoryGrid } from '../components/CategoryGrid'
 import { DateSheet } from '../components/DateSheet'
 import { Icon, type IconName } from '../components/Icon'
@@ -44,6 +44,22 @@ export function LaunchScreen() {
     // Categorias criadas/editadas em outro aparelho chegam pelo sync.
     return onDataChange((source) => source === 'remote' && void reloadCategories(kind))
   }, [kind, reloadCategories])
+
+  // Com mais categorias do que cabem, a grade rola — mas sempre começa (e se mantém,
+  // quando a altura muda, ex.: teclado do sistema abrindo) encostada embaixo, onde
+  // estão as principais. As de cima (menos usadas) ficam a um arrasto de distância.
+  const gridScrollRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = gridScrollRef.current
+    if (!el) return
+    const toBottom = () => {
+      el.scrollTop = el.scrollHeight
+    }
+    toBottom()
+    const observer = new ResizeObserver(toBottom)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [categories])
 
   const key = useCallback((k: string) => setCents((c) => pressKey(c, k)), [])
 
@@ -160,7 +176,7 @@ export function LaunchScreen() {
 
       {/* Categorias: alinhadas embaixo, ao alcance do polegar. Aviso logo acima delas. */}
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <div ref={gridScrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <div className="mt-auto">
             <CategoryGrid categories={categories} onPick={save} />
           </div>

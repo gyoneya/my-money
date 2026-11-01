@@ -25,6 +25,16 @@ export function formatBRL(cents: number): string {
   return `${sign}R$ ${reais},${cent}`
 }
 
+/** Rótulo curto para eixos de gráfico: `R$ 950`, `R$ 1,2 mil`, `R$ 3,4 mi`. */
+export function formatCompactBRL(cents: number): string {
+  const sign = cents < 0 ? '-' : ''
+  const reais = Math.abs(cents) / 100
+  const fmt = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+  if (reais >= 1_000_000) return `${sign}R$ ${fmt(reais / 1_000_000)} mi`
+  if (reais >= 1_000) return `${sign}R$ ${fmt(reais / 1_000)} mil`
+  return `${sign}R$ ${Math.round(reais)}`
+}
+
 /**
  * Lê um valor digitado livremente (fallback de acessibilidade).
  * Aceita `12`, `12,3`, `12,34`, `1.234,56`, `R$ 1.234,56`, `12.34`.

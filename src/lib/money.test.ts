@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatBRL, MAX_CENTS, parseBRL, pressKey } from './money'
+import { formatBRL, formatCompactBRL, MAX_CENTS, parseBRL, pressKey } from './money'
 
 const type = (keys: string[], start = 0) => keys.reduce(pressKey, start)
 
@@ -44,6 +44,19 @@ describe('formatBRL', () => {
     [-100000, '-R$ 1.000,00'],
   ])('%i → %s', (cents, text) => {
     expect(formatBRL(cents)).toBe(text)
+  })
+})
+
+describe('formatCompactBRL', () => {
+  it.each([
+    [0, 'R$ 0'],
+    [95049, 'R$ 950'],
+    [120000, 'R$ 1,2 mil'],
+    [1500000, 'R$ 15 mil'],
+    [340000000, 'R$ 3,4 mi'],
+    [-250000, '-R$ 2,5 mil'],
+  ])('%i → %s', (cents, text) => {
+    expect(formatCompactBRL(cents)).toBe(text)
   })
 })
 

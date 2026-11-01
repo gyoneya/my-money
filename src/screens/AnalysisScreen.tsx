@@ -6,6 +6,7 @@ import type { Category, Transaction } from '../db/types'
 import { budgetLevel, byCategory, canSpend, monthReport, type BudgetLevel } from '../lib/analysis'
 import { formatMonthLabel, monthKey, todayISO } from '../lib/dates'
 import { formatBRL } from '../lib/money'
+import { CommitmentsChart, EvolutionChart } from './AnalysisCharts'
 
 const LEVEL_TEXT: Record<BudgetLevel, string> = {
   ok: 'text-positive',
@@ -45,6 +46,12 @@ export function AnalysisScreen({ onOpenCategory }: { onOpenCategory: (categoryId
           <CanSpendCard rows={rows} categories={categories} month={month} />
           <SummaryCard rows={rows} month={month} />
           <CategoriesCard rows={rows} categories={categories} month={month} onOpen={(id) => onOpenCategory(id, month)} />
+          <Card title="Compromissos futuros">
+            <CommitmentsChart rows={rows} fromMonth={month} />
+          </Card>
+          <Card title="Evolução (12 meses)">
+            <EvolutionChart rows={rows} endMonth={month} />
+          </Card>
         </div>
       </div>
       <MonthBar month={month} onChange={setMonth} />

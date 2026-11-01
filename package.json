@@ -15,7 +15,8 @@
     "date-fns": "^4.4.0",
     "dexie": "^4.4.7",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

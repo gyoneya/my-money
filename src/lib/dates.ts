@@ -73,6 +73,12 @@ export function formatDayHeader(iso: string): string {
   return format(localDate(iso), "EEEE, d 'de' MMMM", { locale: ptBR })
 }
 
+/** `out` (ou `out/27` quando `withYear`) a partir de `AAAA-MM`, para eixos de gráfico. */
+export function formatMonthShort(month: string, withYear = false): string {
+  const label = format(localDate(`${month}-01`), 'MMM', { locale: ptBR })
+  return withYear ? `${label}/${month.slice(2, 4)}` : label
+}
+
 /** `outubro de 2026` a partir de `AAAA-MM`. */
 export function formatMonthLabel(month: string): string {
   return format(localDate(`${month}-01`), "MMMM 'de' yyyy", { locale: ptBR })
